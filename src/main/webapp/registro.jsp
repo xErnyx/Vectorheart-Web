@@ -1,0 +1,484 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="com.productos.negocio.Usuario" %>
+<%
+  // Interceptor: Solo entra aquí si el usuario presiona "REGISTRAR"
+  if ("POST".equalsIgnoreCase(request.getMethod())) {
+    Usuario nuevoUsuario = new Usuario();
+
+    // Enlazamos las variables Java con los 'name' exactos de tu HTML
+    nuevoUsuario.setNombre(request.getParameter("txtNombre"));
+    nuevoUsuario.setCedula(request.getParameter("txtCedula"));
+    nuevoUsuario.setCorreo(request.getParameter("txtEmail"));
+    nuevoUsuario.setClave(request.getParameter("txtClave"));
+    // Ejecución
+    String resultado = nuevoUsuario.registrarUsuario();
+
+    // Lógica de Redirección
+    if (resultado.equals("Operacion realizada con exito")) {
+      // Si guardó en la BD, lo enviamos a la tarjeta visual
+      response.sendRedirect("respuesta.jsp");
+      return; // Detiene la ejecución de registro.jsp
+    } else {
+      // Si hubo error, le avisamos sin cambiar de página
+      out.println("<script>alert('ERROR AL GUARDAR: " + resultado + "');</script>");
+    }
+  }
+%>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <!-- ==========================================================================
+       01. METADATOS Y RECURSOS DEL SISTEMA (HEAD)
+       ========================================================================== -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VECTORHEART // REGISTRO DE USUARIO</title>
+
+  <!-- Hojas de Estilo y Fuentes del HUD -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/auth.css">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Playfair+Display:ital@0;1&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- ==========================================================================
+     02. EFECTOS VISUALES GLOBALES (HUD)
+     ========================================================================== -->
+<div class="ui-scanner"></div>
+<div class="crt-noise"></div>
+
+<!-- Marquesina superior -->
+<div class="danger-marquee top-marquee">
+  <div class="marquee-content">
+    ADVERTENCIA: CONTENIDO VECTORIAL ALTAMENTE VOLÁTIL // ACCESO RESTRINGIDO // SISTEMA DE ARCHIVOS UPS_V.2 // ADVERTENCIA: CONTENIDO VECTORIAL ALTAMENTE VOLÁTIL // ACCESO RESTRINGIDO // SISTEMA DE ARCHIVOS UPS_V.2 //
+  </div>
+</div>
+
+<!-- ==========================================================================
+     03. NAVEGACIÓN SUPERIOR (HEADER)
+     ========================================================================== -->
+<header class="main-header">
+  <a href="index.jsp" class="brand-logo" data-target="true" title="Reiniciar Sistema">
+    <img src="assets/icons/Vectorheart.png" alt="Vectorheart Logo" class="heart-logo">
+  </a>
+
+  <!-- Barra de Búsqueda -->
+  <div class="header-search-container">
+    <input type="search" id="globalSearchInput" placeholder="BUSCAR ARCHIVOS VECTORIALES..." class="search-input" data-target="true">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="search-icon">
+      <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+    </svg>
+  </div>
+
+  <!-- Botones de Control Superiores -->
+  <div class="header-controls">
+    <button id="favBtn" class="icon-btn" data-target="true" title="Favoritos">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      <span class="cart-badge" id="favCountBadge" style="background: #FF003C; color: #FFF;">0</span>
+    </button>
+    <a href="#" class="cart-link icon-btn" data-target="true" title="Base de Datos">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+      <span class="cart-badge" id="cartCountBadge">0</span>
+    </a>
+    <button id="menuBtn" class="icon-btn" data-target="true" title="Abrir Menú" style="font-family: var(--font-heading); font-size: 1.6rem; font-weight: bold; width: 30px; height: 30px;">V</button>
+  </div>
+</header>
+
+<!-- ==========================================================================
+     04. ÁREA CENTRAL DE REGISTRO (MAIN)
+     ========================================================================== -->
+<main class="auth-main" style="padding-top: 100px;">
+  <div class="auth-container" style="max-width: 1000px;">
+
+    <!-- Sección de Formulario -->
+    <section class="auth-section" style="border-right: none; padding: 40px 50px;">
+
+      <div class="auth-header" style="display: flex; align-items: center; gap: 15px;">
+        <h2 style="display: flex; align-items: center; gap: 10px;">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          ALTA DE NUEVO OPERADOR
+        </h2>
+        <span class="status-dot blink"></span>
+      </div>
+
+      <form action="registro.jsp" method="POST" id="formRegistro" class="auth-form" novalidate>
+
+        <div class="form-grid">
+
+          <!-- 1. Nombre Completo -->
+          <div class="form-group">
+            <label for="nombre" class="form-label" style="display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              [ IDENTIFICACIÓN / NOMBRE ]
+            </label>
+            <input type="text" class="form-input" id="nombre" name="txtNombre" placeholder="Ingresa nombre de operador" required>
+          </div>
+
+          <!-- 2. Cédula -->
+          <div class="form-group" style="position: relative;">
+            <label for="cedula" class="form-label" style="display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+              [ CÉDULA ]
+            </label>
+            <input type="text" class="form-input" id="cedula" name="txtCedula" placeholder="10 dígitos numéricos" maxlength="10" required>
+            <!-- Posicionado de forma absoluta para no romper la grilla -->
+            <div id="provinciaDetectada" style="position: absolute; bottom: -22px; left: 0; color: var(--secondary); font-family: var(--font-tech); font-size: 0.8rem; font-weight: bold; width: 100%;"></div>
+          </div>
+
+          <!-- 3. Estado Civil -->
+          <div class="form-group">
+            <label for="estado" class="form-label" style="display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+              [ ESTADO VINCULAR ]
+            </label>
+            <select class="form-input" id="estado" name="cmbEstado">
+              <option value="1">SOLTERO/A (Desvinculado)</option>
+              <option value="2">CASADO/A (Enlazado)</option>
+              <option value="3">DIVORCIADO/A (Enlace roto)</option>
+              <option value="4">VIUDO/A (Enlace perdido)</option>
+            </select>
+          </div>
+
+          <!-- 4. Fecha de Nacimiento -->
+          <div class="form-group">
+            <label for="fecha" class="form-label" style="display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+              [ FECHA DE NACIMIENTO (MES/AÑO) ]
+            </label>
+            <input type="month" class="form-input" id="fecha" name="mFecha" required>
+          </div>
+
+          <!-- 5. Lugar de Residencia (Radios) -->
+          <div class="form-group full-width">
+            <label class="form-label" style="display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+              [ SECTOR DE OPERACIONES / RESIDENCIA ]
+            </label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="rdResidencia" value="Sur" checked>
+                SECTOR SUR
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="rdResidencia" value="Centro">
+                SECTOR CENTRO
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="rdResidencia" value="Norte">
+                SECTOR NORTE
+              </label>
+            </div>
+          </div>
+
+          <!-- 6. Foto de Perfil -->
+          <div class="form-group">
+            <label for="foto" class="form-label" style="display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+              [ CARGAR AVATAR TÁCTICO ]
+            </label>
+            <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
+              <input type="file" class="form-input" id="foto" name="fileFoto" accept=".jpg, .jpeg, .png" style="flex: 1; min-width: 0; padding: 8px;">
+              <!-- Caja de previsualización oculta por defecto -->
+              <div id="boxPrevia" style="width: 45px; height: 45px; flex-shrink: 0; border: 1px solid #333; display: none; background: #000; padding: 2px;">
+                <img id="imgPrevia" src="" alt="Previa" style="width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%) contrast(120%);">
+              </div>
+            </div>
+          </div>
+
+          <!-- 7. Color Favorito -->
+          <div class="form-group">
+            <label for="color" class="form-label" style="display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+              [ FIRMA ESPECTRAL ]
+            </label>
+            <input type="color" class="form-input" id="color" name="cColor" value="#D4FF00" style="width: 100%; height: 48px; padding: 0; border: 1px solid #333; background: #000; cursor: pointer;">
+          </div>
+
+          <!-- 8. Email -->
+          <div class="form-group full-width">
+            <label for="emailReg" class="form-label" style="display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+              [ CORREO ELECTRÓNICO ]
+            </label>
+            <input type="email" class="form-input" id="emailReg" name="txtEmail" placeholder="nuevo.operador@vectorheart.sys" required>
+          </div>
+
+          <!-- 9. Contraseña -->
+          <div class="form-group">
+            <label for="claveReg" class="form-label" style="display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+              [ ESTABLECER CONTRASEÑA ]
+            </label>
+            <div class="password-wrapper">
+              <input type="password" class="form-input" id="claveReg" name="txtClave" placeholder="••••••••" required>
+              <button type="button" class="toggle-password" data-target="true" title="Ver credencial">
+                <svg class="eye-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- 10. Confirmar Contraseña -->
+          <div class="form-group">
+            <label for="claveConfirm" class="form-label" style="display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+              [ VERIFICAR CONTRASEÑA ]
+            </label>
+            <div class="password-wrapper">
+              <input type="password" class="form-input" id="claveConfirm" name="txtClaveConfirm" placeholder="••••••••" required>
+              <button type="button" class="toggle-password" data-target="true" title="Ver credencial">
+                <svg class="eye-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 11. Botones de Acción -->
+        <div class="form-actions" style="margin-top: 30px;">
+          <button type="submit" class="btn-submit" data-target="true" style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            REGISTRAR EN EL NÚCLEO
+          </button>
+          <button type="reset" class="btn-reset" data-target="true" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M15 16h4v2h-4zm0-8h7v2h-7zm0 4h6v2h-6zM3 18c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2V8H3v10zM14 5h-3l-1-1H6L5 5H2v2h12z"/></svg>
+            REINICIAR FORMULARIO
+          </button>
+          <a href="login.jsp" class="btn-reset" data-target="true" style="display: flex; align-items: center; justify-content: center; text-decoration: none; padding: 15px;">CANCELAR</a>
+        </div>
+      </form>
+
+    </section>
+  </div>
+</main>
+
+<!-- ==========================================================================
+     05. MENÚ LATERAL TÁCTICO DE NAVEGACIÓN
+     ========================================================================== -->
+<nav class="side-menu" id="sideMenu" style="justify-content: flex-start; gap: 25px; overflow-y: auto; padding-top: 60px;">
+  <button class="close-menu" id="closeMenuBtn" data-target="true">X</button>
+
+  <div class="sidebar-brand" style="display: flex; align-items: center; gap: 15px;">
+    <span class="v-logo" style="background: var(--primary); color: var(--dark); width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; font-family: var(--font-heading); font-size: 1.5rem;">V</span>
+    <h2 style="font-family: var(--font-heading); font-size: 2rem; margin: 0; line-height: 1; color: var(--text-light);">VECTOR<span class="highlight" style="color: var(--primary);">HEART</span></h2>
+  </div>
+
+  <!-- Enlaces de Navegación -->
+  <ul class="menu-links" style="margin-bottom: 10px;">
+    <li><a href="index.jsp" data-target="true" style="display: flex; align-items: center; gap: 15px;"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg> INICIO</a></li>
+    <li><a href="login.jsp" data-target="true" style="display: flex; align-items: center; gap: 15px;"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> LOGIN</a></li>
+    <li><a href="filosofia.jsp" data-target="true" style="display: flex; align-items: center; gap: 15px;"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2L2 22h20L12 2zm0 5l5 10h-10l5-10z"/></svg> FILOSOFÍA</a></li>
+    <li><a href="index.jsp#catalog-grid" id="tiendaLink" data-target="true" style="display: flex; align-items: center; gap: 15px;"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M4 4h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 10h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 16h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4z"/></svg> CATÁLOGO</a></li>
+    <li><a href="servicios.jsp" data-target="true" style="display: flex; align-items: center; gap: 15px;"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.5 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.4-2.4c.4-.4.4-1 0-1.3z"/></svg> SERVICIOS</a></li>
+    <li><a href="contacto.jsp" data-target="true" style="display: flex; align-items: center; gap: 15px;"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg> CONTACTO</a></li>
+  </ul>
+
+  <!-- Controles de Redes Sociales y Localización -->
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 20px; border-top: 1px solid #333; padding-top: 25px;">
+    <div class="side-socials" style="display: flex; gap: 20px; justify-content: center; width: 100%; border: none; padding: 0; margin: 0;">
+      <a href="https://www.linkedin.com/in/juan-figueroa-98a816195/" target="_blank" data-target="true" title="LinkedIn">
+        <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+      </a>
+      <a href="https://github.com/xErnyx" target="_blank" data-target="true" title="GitHub">
+        <svg viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+      </a>
+      <a href="https://www.youtube.com/@Antonimo555" target="_blank" data-target="true" title="YouTube">
+        <svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+      </a>
+      <a href="https://www.facebook.com/Antonimo0/" target="_blank" data-target="true" title="Facebook">
+        <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+      </a>
+      <a href="https://www.instagram.com/0antonimo0/" target="_blank" data-target="true" title="Instagram">
+        <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+      </a>
+      <a href="https://www.tiktok.com/@erny_xp555" target="_blank" data-target="true" title="TikTok">
+        <svg viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+      </a>
+    </div>
+
+    <div class="localization-controls" style="display: flex; gap: 10px; justify-content: center; width: 100%;">
+      <button class="loc-btn" data-target="true" style="justify-content: center; padding: 10px 20px;"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.91-4.33-3.56zm2.95-8H5.08c-.96 1.66-2.49 2.93-4.33 3.56C5.81 7.11 6.28 5.92 6.6 4.68zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.34.16-2h4.68c.09.66.16 1.32.16 2 0 .68-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg> Ecuador</button>
+      <button class="loc-btn" data-target="true" style="justify-content: center; padding: 10px 20px;"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg> Español</button>
+    </div>
+    <p class="copyright" style="color: #666; font-size: 0.85rem; margin: 0; text-align: center; font-family: var(--font-tech);">© 2026 VECTORHEART</p>
+  </div>
+</nav>
+
+<!-- ==========================================================================
+     06. PANEL DE BASE DE DATOS (CARRITO DE COMPRAS)
+     ========================================================================== -->
+<div class="cart-panel" id="cartPanel">
+  <div class="cart-header">
+    <h2>REGISTRO DE COMPRAS</h2>
+    <button class="close-cart" id="closeCartBtn" data-target="true">X</button>
+  </div>
+
+  <div class="cart-items-container" id="cartItemsContainer"></div>
+
+  <div class="cart-footer">
+    <div class="cart-total">TOTAL: $<span id="cartTotalValue">0.00</span></div>
+
+    <!-- Acciones Inferiores -->
+    <div class="cart-bottom-actions">
+      <button id="btn-undo-cart" class="btn-undo" data-target="true">RESTAR ÚLTIMO</button>
+      <button id="btn-vaciar-carrito" class="btn-purgar" data-target="true">PURGAR SISTEMA</button>
+    </div>
+
+    <button class="btn-primary" style="width: 100%;" data-target="true">PROCESAR PAGO >></button>
+  </div>
+</div>
+
+<div class="fav-panel" id="favPanel">
+  <div class="fav-header">
+    <h2 style="color: #FF003C; margin: 0;">ARCHIVOS CLASIFICADOS</h2>
+    <button class="close-fav" id="closeFavBtn" data-target="true">X</button>
+  </div>
+
+  <div class="fav-items-container" id="favItemsContainer"></div>
+
+  <div class="fav-footer" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #333;">
+    <button id="btn-vaciar-favs" class="btn-purgar-favs" data-target="true">PURGAR FAVORITOS</button>
+  </div>
+</div>
+
+<!-- ==========================================================================
+     07. PIE DE PÁGINA GLOBAL (FOOTER)
+     ========================================================================== -->
+<footer class="main-footer" style="background: rgba(10, 10, 10, 0.95); border-top: 2px solid var(--primary); padding: 60px 5% 0px; margin-top: 80px; display: flex; flex-direction: column; position: relative; z-index: 10;">
+
+  <!-- Contenedor Superior (Columnas de información) -->
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 80px; width: 100%; margin-bottom: 5px;">
+
+    <!-- Columna 1: Branding -->
+    <div class="footer-col" style="flex: 1.5; min-width: 380px;">
+      <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+        <img src="assets/icons/Vectorheart.png" alt="Vectorheart Logo" class="heart-logo" style="height: 50px; width: auto; mix-blend-mode: screen;">
+        <h2 style="font-family: var(--font-heading); font-size: 2.6rem; margin: 0; line-height: 1; color: #FFF;">VECTOR<span style="color: var(--primary);">HEART</span></h2>
+      </div>
+      <p style="color: #AAA; font-family: var(--font-tech); font-size: 0.95rem; line-height: 1.6; max-width: 300px;">
+        Archivo de diseño táctico y arte cibernético. Todos los sistemas operando bajo protocolos de máxima seguridad.
+      </p>
+    </div>
+
+    <!-- Columna 2: Enlaces Rápidos -->
+    <div class="footer-col" style="flex: 1; min-width: 200px;">
+      <h4 style="color: var(--text-light); font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 20px; letter-spacing: 2px; text-transform: uppercase;">Navegación</h4>
+      <ul class="footer-links" style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px;">
+        <li><a href="index.jsp" data-target="true" style="color: #AAA; font-family: var(--font-tech); text-decoration: none; font-size: 0.95rem; transition: color 0.3s ease;">Inicio del Sistema</a></li>
+        <li><a href="login.jsp" data-target="true" style="color: #AAA; font-family: var(--font-tech); text-decoration: none; font-size: 0.95rem; transition: color 0.3s ease;">Login de Usuario</a></li>
+        <li><a href="filosofia.jsp" data-target="true" style="color: #AAA; font-family: var(--font-tech); text-decoration: none; font-size: 0.95rem; transition: color 0.3s ease;">Filosofía y Misión</a></li>
+        <li><a href="index.jsp#catalog-grid" data-target="true" style="color: #AAA; font-family: var(--font-tech); text-decoration: none; font-size: 0.95rem; transition: color 0.3s ease;">Catálogo Vectorial</a></li>
+        <li><a href="servicios.jsp" data-target="true" style="color: #AAA; font-family: var(--font-tech); text-decoration: none; font-size: 0.95rem; transition: color 0.3s ease;">Servicios Tácticos</a></li>
+        <li><a href="contacto.jsp" data-target="true" style="color: #AAA; font-family: var(--font-tech); text-decoration: none; font-size: 0.95rem; transition: color 0.3s ease;">Contacto y Soporte</a></li>
+      </ul>
+    </div>
+
+    <!-- Columna 3: Información de Contacto -->
+    <div class="footer-col" style="flex: 1; min-width: 260px;">
+      <h4 style="color: var(--text-light); font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 20px; letter-spacing: 2px; text-transform: uppercase;">Directorio</h4>
+      <div style="display: flex; flex-direction: column; gap: 18px;">
+        <div>
+          <span style="color: var(--primary); font-family: var(--font-tech); font-size: 0.8rem; letter-spacing: 1px; display: block; margin-bottom: 4px;">[ ENLACE_UPS_SUR ]</span>
+          <span style="color: #FFF; font-family: var(--font-tech); font-size: 0.95rem;">jfigueroam2@est.ups.edu.ec</span>
+        </div>
+        <div>
+          <span style="color: var(--primary); font-family: var(--font-tech); font-size: 0.8rem; letter-spacing: 1px; display: block; margin-bottom: 4px;">[ ENLACE_PERSONAL ]</span>
+          <span style="color: #FFF; font-family: var(--font-tech); font-size: 0.95rem;">juan.figueroa@gmail.com</span>
+        </div>
+        <div>
+          <span style="color: var(--primary); font-family: var(--font-tech); font-size: 0.8rem; letter-spacing: 1px; display: block; margin-bottom: 4px;">[ SOPORTE_SISTEMA ]</span>
+          <span style="color: #FFF; font-family: var(--font-tech); font-size: 0.95rem;">soporte@vectorheart.sys</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Redes Sociales Footer -->
+  <div class="side-socials" style="display: flex; gap: 25px; justify-content: center; width: 100%; padding: 25px 0; border-top: 1px solid #222; border-bottom: 1px solid #222; mix-blend-mode: screen; margin-bottom: 5px;">
+    <a href="https://www.linkedin.com/in/juan-figueroa-98a816195/" target="_blank" data-target="true" title="LinkedIn">
+      <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+    </a>
+    <a href="https://github.com/xErnyx" target="_blank" data-target="true" title="GitHub">
+      <svg viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+    </a>
+    <a href="https://www.youtube.com/@Antonimo555" target="_blank" data-target="true" title="YouTube">
+      <svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+    </a>
+    <a href="https://www.facebook.com/Antonimo0/" target="_blank" data-target="true" title="Facebook">
+      <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+    </a>
+    <a href="https://www.instagram.com/0antonimo0/" target="_blank" data-target="true" title="Instagram">
+      <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+    </a>
+    <a href="https://www.tiktok.com/@erny_xp555" target="_blank" data-target="true" title="TikTok">
+      <svg viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+    </a>
+  </div>
+
+  <!-- Componente de Ubicación Satelital -->
+  <article style="width: 100%;">
+    <div class="map-container" style="width: 100%; height: 350px; position: relative; border: 2px solid #333; margin-bottom: 40px;">
+      <div style="position: absolute; top: -1px; left: -1px; width: 15px; height: 15px; border-top: 2px solid var(--primary); border-left: 2px solid var(--primary); z-index: 5;"></div>
+      <div style="position: absolute; bottom: -1px; right: -1px; width: 15px; height: 15px; border-bottom: 2px solid var(--primary); border-right: 2px solid var(--primary); z-index: 5;"></div>
+
+      <iframe src="https://maps.google.com/maps?q=Universidad+Politecnica+Salesiana+Campus+Sur+Quito&t=&z=16&ie=UTF8&iwloc=&output=embed" width="100%" height="100%" style="border:0; filter: invert(90%) hue-rotate(180deg);" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
+  </article>
+</footer>
+
+<!-- ==========================================================================
+     08. BASE DE COPYRIGHT Y SCRIPTS
+     ========================================================================== -->
+<div class="footer-bottom" style="background: #050505; text-align: center; padding: 20px; border-top: 1px solid #222; font-family: var(--font-tech); color: #555; font-size: 0.8rem; letter-spacing: 1px;">
+  © 2026 VECTORHEART
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+
+<!-- ==========================================================================
+     09. SCRIPT LOCAL: PREVISUALIZACIÓN AVATAR Y REINICIO FORMULARIO
+     ========================================================================== -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const fotoInput = document.getElementById('foto');
+    const boxPrevia = document.getElementById('boxPrevia');
+    const imgPrevia = document.getElementById('imgPrevia');
+    const formRegistro = document.getElementById('formRegistro');
+    const provinciaDetectada = document.getElementById('provinciaDetectada');
+
+    // Lógica de Previsualización al cargar imagen
+    fotoInput.addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          imgPrevia.src = e.target.result;
+          boxPrevia.style.display = 'block';
+        }
+        reader.readAsDataURL(file);
+      } else {
+        boxPrevia.style.display = 'none';
+        imgPrevia.src = '';
+      }
+    });
+
+    // Lógica para el botón "REINICIAR FORMULARIO"
+    formRegistro.addEventListener('reset', function() {
+      boxPrevia.style.display = 'none';
+      imgPrevia.src = '';
+
+      if (provinciaDetectada) {
+        provinciaDetectada.textContent = '';
+      }
+
+      const errorTexts = formRegistro.querySelectorAll('.error-text');
+      errorTexts.forEach(err => err.remove());
+
+      const errorInputs = formRegistro.querySelectorAll('.input-error');
+      errorInputs.forEach(input => input.classList.remove('input-error'));
+    });
+  });
+</script>
+
+</body>
+</html>

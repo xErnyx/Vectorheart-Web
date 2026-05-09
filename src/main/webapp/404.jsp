@@ -1,0 +1,113 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <!-- ==========================================================================
+       01. METADATOS Y RECURSOS DEL SISTEMA (HEAD)
+       ========================================================================== -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VECTORHEART // ERROR 404</title>
+
+  <!-- Hojas de Estilo y Fuentes del HUD -->
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- ==========================================================================
+       02. ESTILOS LOCALES ESPECÍFICOS (ERROR 404)
+       ========================================================================== -->
+  <style>
+    .error-container {
+      height: 80vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border: 4px dashed var(--primary);
+      margin: 40px 10%;
+      background: repeating-linear-gradient(
+        45deg,
+        rgba(0, 0, 0, 0.02),
+        rgba(0, 0, 0, 0.02) 10px,
+        rgba(230, 0, 0, 0.05) 10px,
+        rgba(230, 0, 0, 0.05) 20px
+      );
+    }
+    .error-code { font-family: var(--font-heading); font-size: 10rem; color: var(--primary); line-height: 0.8; text-shadow: 5px 5px 0px var(--dark); }
+    .error-msg { font-size: 1.5rem; font-weight: bold; margin: 20px 0; background: var(--dark); color: white; padding: 10px 20px; }
+    .btn-return { margin-top: 30px; text-decoration: none; display: inline-block; }
+  </style>
+</head>
+<body>
+
+<!-- ==========================================================================
+     03. EFECTOS VISUALES GLOBALES (HUD)
+     ========================================================================== -->
+<!-- Efecto de escaneo CRT y ruido estático de fondo -->
+<div class="ui-scanner"></div>
+<div class="crt-noise"></div>
+
+<!-- Marquesina superior de advertencia táctica -->
+<div class="danger-marquee top-marquee">
+  <div class="marquee-content">
+    // ALERTA DE SISTEMA // DIRECTORIO NO ENCONTRADO // SECTOR EN CONSTRUCCIÓN // ALERTA DE SISTEMA // DIRECTORIO NO ENCONTRADO //
+  </div>
+</div>
+
+<!-- ==========================================================================
+     04. RASTREADOR DE CURSOR
+     ========================================================================== -->
+<div id="custom-cursor"><div id="cursor-coords">X:0 Y:0</div></div>
+
+<!-- ==========================================================================
+     05. CONTENIDO PRINCIPAL (MAIN)
+     ========================================================================== -->
+<main>
+  <div class="error-container">
+
+    <!-- Código de error destacado -->
+    <h1 class="error-code">404</h1>
+
+    <!-- Mensajes del sistema -->
+    <p class="error-msg">[ SECTOR EN DESARROLLO // DATOS RESTRINGIDOS ]</p>
+    <p style="max-width: 500px; color: #666;">El nodo al que intentas acceder está siendo construido por los administradores del sistema UPS_V.2 o la ruta ha sido corrompida.</p>
+
+    <!-- Botón de retorno al inicio -->
+    <a href="index.jsp" class="btn-explore btn-return" data-target="true" style="font-size: 1.2rem; padding: 15px 30px;"><< VOLVER AL NODO PRINCIPAL</a>
+
+  </div>
+</main>
+
+<!-- ==========================================================================
+     06. EJECUCIÓN DE SCRIPTS LOCALES
+     ========================================================================== -->
+<script>
+  // Lógica súper básica solo para que el cursor funcione en esta página
+  const cursor = document.getElementById('custom-cursor');
+  const coords = document.getElementById('cursor-coords');
+
+  // Seguimiento del ratón en tiempo real
+  document.addEventListener('mousemove', (e) => {
+    cursor.style.left = `${e.clientX}px`;
+    cursor.style.top = `${e.clientY}px`;
+    coords.textContent = `X:${e.clientX} Y:${e.clientY}`;
+  });
+
+  // Efecto Hover táctico en los enlaces (Botón de volver)
+  document.querySelectorAll('a').forEach(target => {
+    target.addEventListener('mouseenter', () => {
+      cursor.style.transform = 'translate(-50%, -50%) scale(1.5) rotate(45deg)';
+      cursor.style.borderColor = 'var(--secondary)';
+      cursor.style.borderRadius = '50%';
+    });
+    target.addEventListener('mouseleave', () => {
+      cursor.style.transform = 'translate(-50%, -50%) scale(1) rotate(0deg)';
+      cursor.style.borderColor = 'var(--primary)';
+      cursor.style.borderRadius = '0';
+    });
+  });
+</script>
+
+</body>
+</html>
