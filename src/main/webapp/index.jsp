@@ -1,12 +1,21 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="com.productos.negocio.OperacionesCliente" %>
 <%
   // SISTEMA DE RADAR: Verificamos si el usuario pasó por el Login
   boolean isLogged = false;
   String rolUsuario = "0"; // 0 = Observador/No logueado
+  String favoritosGuardados = "[]"; // Memoria por defecto
 
   if (session.getAttribute("usuario_valido") != null) {
     isLogged = true;
     rolUsuario = String.valueOf(session.getAttribute("usuario_rol"));
+
+    // --- SINCRONIZACIÓN TÁCTICA ---
+    if (session.getAttribute("usuario_id") != null) {
+      int idUs = (Integer) session.getAttribute("usuario_id");
+      OperacionesCliente operaciones = new OperacionesCliente();
+      favoritosGuardados = operaciones.obtenerFavoritosJSON(idUs);
+    }
   }
 %>
 <!DOCTYPE html>
@@ -239,7 +248,9 @@
     <li style="border: 1px solid #333; padding: 15px; background: rgba(10, 10, 10, 0.8); margin-bottom: 10px; width: 100%;">
 
       <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #333;">
-        <img id="menuAvatar" src="assets/icons/Vectorheart.png" style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover;">
+        <img id="menuAvatar"
+             src="<%= (session.getAttribute("usuario_foto") != null && !session.getAttribute("usuario_foto").toString().isEmpty()) ? session.getAttribute("usuario_foto") : "assets/icons/Vectorheart.png" %>"
+             style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover;">
         <div>
           <span style="color: var(--primary); font-size: 0.65rem; display: block; letter-spacing: 2px;">OPERADOR ACTIVO</span>
           <strong style="color: #FFF; font-size: 1rem; text-transform: uppercase;"><%= session.getAttribute("usuario_nombre") %></strong>
@@ -256,14 +267,6 @@
         ROMPER ENLACE
       </a>
 
-      <script>
-        document.addEventListener('DOMContentLoaded', () => {
-          const savedUser = JSON.parse(localStorage.getItem('vh_new_user'));
-          if (savedUser && savedUser.foto && savedUser.foto.length > 10) {
-            document.getElementById('menuAvatar').src = savedUser.foto;
-          }
-        });
-      </script>
     </li>
     <% } %>
     <li><a href="index.jsp" data-target="true" style="display: flex; align-items: center; gap: 15px;"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg> INICIO</a></li>
@@ -436,6 +439,14 @@
   // Transferimos el estado de seguridad de Java a variables globales de JS
   const SISTEMA_LOGUEADO = <%= isLogged %>;
   const ROL_ACTUAL = "<%= rolUsuario %>";
+
+  // INYECCIÓN DE MEMORIA PRIMORDIAL PARA EL CATÁLOGO
+  const datosDescargados = <%=favoritosGuardados%>;
+  if (datosDescargados) {
+    localStorage.setItem('vh_fav_items', JSON.stringify(datosDescargados));
+  } else {
+    localStorage.setItem('vh_fav_items', JSON.stringify([]));
+  }
 </script>
 
 <script src="js/app.js"></script>

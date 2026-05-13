@@ -287,29 +287,96 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
     });
 
-    // Lógica para remover un favorito individual desde el panel
+    // Lógica para remover un favorito individual desde el panel CONECTADA A BD
     document.querySelectorAll('.remove-fav-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
-        favorites = favorites.filter(item => item.id !== id);
-        localStorage.setItem('vh_fav_items', JSON.stringify(favorites));
-        updateFavUI();
+        const originalText = btn.textContent;
 
-        // Si la tarjeta está visible en la página actual, apagar su corazón
-        const cardBtn = document.querySelector(`.fav-card-btn[data-id="${id}"]`);
-        if (cardBtn) cardBtn.classList.remove('is-fav');
+        // Efecto visual: indicamos que estamos contactando al servidor
+        btn.textContent = 'Borrando...';
+        btn.style.color = '#FF003C';
+
+        try {
+          // 1. Disparamos la orden de eliminación a Java/PostgreSQL
+          const formData = new URLSearchParams();
+          formData.append('action', 'remove');
+          formData.append('idProducto', id);
+
+          const response = await fetch('FavoritosServlet', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData.toString()
+          });
+
+          const result = await response.json();
+
+          if (result.status === 'success') {
+            // 2. Si PostgreSQL confirma la destrucción, lo borramos de la memoria visual
+            favorites = favorites.filter(item => item.id !== id);
+            localStorage.setItem('vh_fav_items', JSON.stringify(favorites));
+
+            updateFavUI(); // Redibuja el panel lateral
+
+            // 3. Si la tarjeta está visible en el catálogo, apagamos su corazón rojo
+            const cardBtn = document.querySelector(`.fav-card-btn[data-id="${id}"]`);
+            if (cardBtn) {
+              cardBtn.classList.remove('is-fav');
+            }
+          } else {
+            console.error("SYS.ERR // El servidor rechazó la eliminación:", result.message);
+            btn.textContent = originalText;
+            btn.style.color = '#666';
+          }
+        } catch (error) {
+          console.error("SYS.ERR // Falla de transmisión con el puente Java:", error);
+          btn.textContent = originalText;
+          btn.style.color = '#666';
+        }
       });
     });
   }
 
-  // Lógica global para el botón "Purgar Favoritos"
+  // Lógica global para el botón "Purgar Favoritos" CONECTADA A BD
   const btnVaciarFavsGlobal = document.getElementById('btn-vaciar-favs');
   if (btnVaciarFavsGlobal) {
     if (typeof attachCursorHover === 'function') attachCursorHover([btnVaciarFavsGlobal]);
-    btnVaciarFavsGlobal.addEventListener('click', () => {
-      localStorage.setItem('vh_fav_items', JSON.stringify([]));
-      updateFavUI();
-      document.querySelectorAll('.fav-card-btn').forEach(b => b.classList.remove('is-fav'));
+    btnVaciarFavsGlobal.addEventListener('click', async () => {
+
+      let favorites = JSON.parse(localStorage.getItem('vh_fav_items')) || [];
+      if (favorites.length === 0) return; // Si ya está vacío, no hacemos nada
+
+      const originalText = btnVaciarFavsGlobal.textContent;
+      // Efecto de advertencia táctica
+      btnVaciarFavsGlobal.textContent = 'PURGANDO NÚCLEO...';
+      btnVaciarFavsGlobal.style.color = '#FF003C';
+
+      try {
+        // Disparamos un torpedo de borrado por cada archivo en la Base de Datos
+        for (let fav of favorites) {
+          const formData = new URLSearchParams();
+          formData.append('action', 'remove');
+          formData.append('idProducto', fav.id);
+
+          await fetch('FavoritosServlet', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData.toString()
+          });
+        }
+
+        // Una vez que PostgreSQL confirma la destrucción masiva, limpiamos el navegador
+        localStorage.setItem('vh_fav_items', JSON.stringify([]));
+        updateFavUI();
+        document.querySelectorAll('.fav-card-btn').forEach(b => b.classList.remove('is-fav'));
+
+      } catch (error) {
+        console.error("SYS.ERR // Falla en la purga masiva:", error);
+      } finally {
+        // Restauramos el botón
+        btnVaciarFavsGlobal.textContent = originalText;
+        btnVaciarFavsGlobal.style.color = '';
+      }
     });
   }
 
@@ -668,40 +735,70 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       });
 
-      // Nueva Lógica Favoritos
+      // Nueva Lógica Favoritos CONECTADA A JAVA (FASE 3)
       document.querySelectorAll('.fav-card-btn').forEach(button => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', async () => {
 
-          // --- ESCUDO DE SEGURIDAD 2 (ESTÉTICO) ---
+          // --- ESCUDO DE SEGURIDAD ---
           if (typeof SISTEMA_LOGUEADO !== 'undefined' && SISTEMA_LOGUEADO === false) {
-            button.style.color = '#FF003C'; // El corazón parpadea en rojo
+            button.style.color = '#FF003C';
             button.style.borderColor = '#FF003C';
-
-            setTimeout(() => {
-              window.location.href = "login.jsp";
-            }, 800);
-            return; // Corta el cable
+            setTimeout(() => { window.location.href = "login.jsp"; }, 800);
+            return;
           }
+
+          const productId = button.getAttribute('data-id');
+          const productData = artDatabase.find(p => p.id === productId);
+          if (!productData) return;
 
           let favorites = JSON.parse(localStorage.getItem('vh_fav_items')) || [];
-          const productId = button.getAttribute('data-id');
           const isCurrentlyFav = favorites.some(f => f.id === productId);
 
-          if (isCurrentlyFav) {
-            favorites = favorites.filter(f => f.id !== productId);
-            button.classList.remove('is-fav');
-          } else {
-            const productData = artDatabase.find(p => p.id === productId);
-            if (productData) {
-              favorites.push(productData);
-              button.classList.add('is-fav');
+          // Definimos si la orden es "agregar" (add) o "remover" (remove)
+          const action = isCurrentlyFav ? 'remove' : 'add';
+
+          // Efecto visual de "Transmitiendo..."
+          const originalHTML = button.innerHTML;
+          button.innerHTML = '<span style="font-family: var(--font-tech); font-size: 0.7rem; color: var(--primary);">...</span>';
+
+          try {
+            // EMPAQUETAMOS LOS DATOS Y DISPARAMOS AL SERVLET DE JAVA
+            const formData = new URLSearchParams();
+            formData.append('action', action);
+            formData.append('idProducto', productData.id);
+            formData.append('titulo', productData.title);
+            formData.append('imagen', productData.image);
+
+            const response = await fetch('FavoritosServlet', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: formData.toString()
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+              // Si Java y PostgreSQL confirman éxito, actualizamos la interfaz
+              if (action === 'add') {
+                favorites.push(productData);
+                button.classList.add('is-fav');
+              } else {
+                favorites = favorites.filter(f => f.id !== productId);
+                button.classList.remove('is-fav');
+              }
+              localStorage.setItem('vh_fav_items', JSON.stringify(favorites));
+              updateFavUI();
+
+              if (favPanel) { favPanel.classList.add('active'); if (cartPanel) cartPanel.classList.remove('active'); }
+            } else {
+              console.error("SYS.ERR //", result.message);
             }
+          } catch (error) {
+            console.error("SYS.ERR // Falla de transmisión:", error);
+          } finally {
+            // Restauramos el icono del corazón
+            button.innerHTML = originalHTML;
           }
-
-          localStorage.setItem('vh_fav_items', JSON.stringify(favorites));
-          updateFavUI();
-
-          if (favPanel) { favPanel.classList.add('active'); if (cartPanel) cartPanel.classList.remove('active'); }
         });
       });
     }

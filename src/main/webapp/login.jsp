@@ -19,8 +19,13 @@
 
     if (rolValidado > 0) {
       session.setAttribute("usuario_valido", "SI");
+      session.setAttribute("usuario_id", usuarioLogin.getId_us());
       session.setAttribute("usuario_nombre", usuarioLogin.getNombre());
       session.setAttribute("usuario_rol", rolValidado);
+
+      // CARGAMOS LA FOTO EN EL HUD GLOBAL
+      session.setAttribute("usuario_foto", usuarioLogin.getFoto());
+
       response.sendRedirect("index.jsp");
       return;
     } else {

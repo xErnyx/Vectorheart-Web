@@ -10,16 +10,23 @@
     nuevoUsuario.setCedula(request.getParameter("txtCedula"));
     nuevoUsuario.setCorreo(request.getParameter("txtEmail"));
     nuevoUsuario.setClave(request.getParameter("txtClave"));
+
+    // --- NUEVO: CAPTURAMOS LA FOTO ---
+    String fotoData = request.getParameter("txtFotoBase64");
+    if (fotoData != null) {
+      nuevoUsuario.setFoto(fotoData);
+    } else {
+      nuevoUsuario.setFoto("");
+    }
+
     // Ejecución
     String resultado = nuevoUsuario.registrarUsuario();
 
     // Lógica de Redirección
     if (resultado.equals("Operacion realizada con exito")) {
-      // Si guardó en la BD, lo enviamos a la tarjeta visual
       response.sendRedirect("respuesta.jsp");
-      return; // Detiene la ejecución de registro.jsp
+      return;
     } else {
-      // Si hubo error, le avisamos sin cambiar de página
       out.println("<script>alert('ERROR AL GUARDAR: " + resultado + "');</script>");
     }
   }
@@ -102,6 +109,7 @@
       </div>
 
       <form action="registro.jsp" method="POST" id="formRegistro" class="auth-form" novalidate>
+        <input type="hidden" id="fotoBase64" name="txtFotoBase64" value="">
 
         <div class="form-grid">
 
@@ -445,6 +453,7 @@
     const imgPrevia = document.getElementById('imgPrevia');
     const formRegistro = document.getElementById('formRegistro');
     const provinciaDetectada = document.getElementById('provinciaDetectada');
+    const inputOcultoFoto = document.getElementById('fotoBase64'); // <-- EL BOLSILLO SECRETO
 
     // Lógica de Previsualización al cargar imagen
     fotoInput.addEventListener('change', function(event) {
@@ -452,13 +461,18 @@
       if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
+          // 1. Mostrar en pantalla
           imgPrevia.src = e.target.result;
           boxPrevia.style.display = 'block';
+
+          // 2. Guardar el texto Base64 en el formulario para que viaje a Java
+          inputOcultoFoto.value = e.target.result;
         }
         reader.readAsDataURL(file);
       } else {
         boxPrevia.style.display = 'none';
         imgPrevia.src = '';
+        inputOcultoFoto.value = ''; // Limpiamos si el usuario cancela
       }
     });
 
@@ -466,6 +480,7 @@
     formRegistro.addEventListener('reset', function() {
       boxPrevia.style.display = 'none';
       imgPrevia.src = '';
+      inputOcultoFoto.value = ''; // Limpiamos la memoria
 
       if (provinciaDetectada) {
         provinciaDetectada.textContent = '';

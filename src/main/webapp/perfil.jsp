@@ -1,9 +1,18 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="com.productos.negocio.OperacionesCliente" %>
 <%
     // 1. ESCUDO DE SEGURIDAD ABSOLUTO
     if (session.getAttribute("usuario_valido") == null) {
         response.sendRedirect("login.jsp");
         return;
+    }
+
+    // --- SINCRONIZACIÓN TÁCTICA ---
+    String favoritosGuardados = "[]";
+    if (session.getAttribute("usuario_id") != null) {
+        int idUs = (Integer) session.getAttribute("usuario_id");
+        OperacionesCliente operaciones = new OperacionesCliente();
+        favoritosGuardados = operaciones.obtenerFavoritosJSON(idUs);
     }
 
     // 2. Variables del Radar Global
@@ -113,7 +122,10 @@
 <main>
     <div class="profile-banner">
         <div style="position: relative; z-index: 10; display: flex; align-items: flex-end; gap: 30px; width: 100%;">
-            <img id="mainAvatar" src="assets/icons/Vectorheart.png" class="profile-avatar" alt="Avatar Operador">
+            <img id="mainAvatar" class="profile-avatar"
+                 src="<%= (session.getAttribute("usuario_foto") != null && !session.getAttribute("usuario_foto").toString().isEmpty()) ? session.getAttribute("usuario_foto") : "assets/icons/Vectorheart.png" %>"
+                 alt="Avatar Operador">
+
             <div style="flex-grow: 1; padding-bottom: 10px;">
                 <span style="color: <%=colorRol%>; font-family: var(--font-tech); font-weight: bold; letter-spacing: 3px; font-size: 0.9rem; display: block; margin-bottom: 5px;">[ <%=nombreRol%> ]</span>
                 <h1 style="font-family: var(--font-heading); font-size: 4.5rem; margin: 0; line-height: 0.9; text-transform: uppercase; color: var(--text-light); text-shadow: 2px 2px 0 #000;"><%=nombre%></h1>
@@ -197,7 +209,9 @@
     <ul class="menu-links" style="margin-bottom: 10px;">
         <li style="border: 1px solid #333; padding: 15px; background: rgba(10, 10, 10, 0.8); margin-bottom: 10px; width: 100%;">
             <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #333;">
-                <img id="menuAvatar" src="assets/icons/Vectorheart.png" style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover;">
+                <img id="menuAvatar"
+                     src="<%= (session.getAttribute("usuario_foto") != null && !session.getAttribute("usuario_foto").toString().isEmpty()) ? session.getAttribute("usuario_foto") : "assets/icons/Vectorheart.png" %>"
+                     style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover;">
                 <div>
                     <span style="color: var(--primary); font-size: 0.65rem; display: block; letter-spacing: 2px;">OPERADOR ACTIVO</span>
                     <strong style="color: #FFF; font-size: 1rem; text-transform: uppercase;"><%= session.getAttribute("usuario_nombre") %></strong>
@@ -365,17 +379,18 @@
 </div>
 
 <!-- ================= ARCHIVOS DE SCRIPT ================= -->
+<script>
+    const datosDescargados = <%=favoritosGuardados%>;
+    if (datosDescargados) {
+        localStorage.setItem('vh_fav_items', JSON.stringify(datosDescargados));
+    } else {
+        localStorage.setItem('vh_fav_items', JSON.stringify([]));
+    }
+</script>
+
 <script src="js/app.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Inyección de la foto de perfil y el menú global
-        const savedUser = JSON.parse(localStorage.getItem('vh_new_user'));
-        if (savedUser && savedUser.foto && savedUser.foto.length > 10) {
-            document.getElementById('mainAvatar').src = savedUser.foto;
-            const menuAvatars = document.querySelectorAll('#menuAvatar');
-            menuAvatars.forEach(img => img.src = savedUser.foto);
-        }
-
         // Carga de Favoritos Dinámica (Rol 3)
         const favGrid = document.getElementById('profileFavGrid');
         if(favGrid) {

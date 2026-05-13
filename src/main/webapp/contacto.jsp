@@ -194,7 +194,9 @@
     <li style="border: 1px solid #333; padding: 15px; background: rgba(10, 10, 10, 0.8); margin-bottom: 10px; width: 100%;">
 
       <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #333;">
-        <img id="menuAvatar" src="assets/icons/Vectorheart.png" style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover;">
+        <img id="menuAvatar"
+             src="<%= (session.getAttribute("usuario_foto") != null && !session.getAttribute("usuario_foto").toString().isEmpty()) ? session.getAttribute("usuario_foto") : "assets/icons/Vectorheart.png" %>"
+             style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover;">
         <div>
           <span style="color: var(--primary); font-size: 0.65rem; display: block; letter-spacing: 2px;">OPERADOR ACTIVO</span>
           <strong style="color: #FFF; font-size: 1rem; text-transform: uppercase;"><%= session.getAttribute("usuario_nombre") %></strong>
@@ -210,15 +212,7 @@
         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
         ROMPER ENLACE
       </a>
-      <script>
-        document.addEventListener('DOMContentLoaded', () => {
-          const savedUser = JSON.parse(localStorage.getItem('vh_new_user'));
-          if (savedUser && savedUser.foto && savedUser.foto.length > 10) {
-            const avatars = document.querySelectorAll('#menuAvatar');
-            avatars.forEach(img => img.src = savedUser.foto);
-          }
-        });
-      </script>
+
     </li>
     <% } %>
 
