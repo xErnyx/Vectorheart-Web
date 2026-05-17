@@ -432,3 +432,47 @@ img { image-rendering: high-quality; image-rendering: -webkit-optimize-contrast;
 /* 3. Estilo reactivo del botón de corazón en las tarjetas */
 .fav-card-btn:hover { border-color: #FF003C !important; color: #FF003C !important; background: rgba(255,0,60,0.1) !important; }
 .fav-card-btn.is-fav { border-color: #FF003C !important; background: #FF003C !important; color: #000 !important; }
+
+/* ==========================================================================
+   14. SISTEMA DE NOTIFICACIONES TÁCTICAS (TOASTS)
+   ========================================================================== */
+#toast-container {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.tactical-toast {
+  min-width: 300px;
+  background: rgba(10, 10, 10, 0.95);
+  border: 1px solid #333;
+  border-left: 4px solid var(--primary);
+  color: #FFF;
+  padding: 15px 20px;
+  font-family: var(--font-tech);
+  font-size: 0.9rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  transform: translateX(120%);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.tactical-toast.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.tactical-toast.error { border-left-color: #FF003C; }
+.tactical-toast.error .toast-icon { color: #FF003C; }
+.tactical-toast.success { border-left-color: var(--primary); }
+.tactical-toast.success .toast-icon { color: var(--primary); }
+
+.toast-icon { font-size: 1.2rem; font-weight: bold; }

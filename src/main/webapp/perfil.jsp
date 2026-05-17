@@ -9,10 +9,16 @@
 
     // --- SINCRONIZACIÓN TÁCTICA ---
     String favoritosGuardados = "[]";
+    String carritoGuardado = "[]";
+    String historialGuardado = "[]"; // NUEVO: Memoria para el historial
+
     if (session.getAttribute("usuario_id") != null) {
         int idUs = (Integer) session.getAttribute("usuario_id");
         OperacionesCliente operaciones = new OperacionesCliente();
+
         favoritosGuardados = operaciones.obtenerFavoritosJSON(idUs);
+        carritoGuardado = operaciones.obtenerCarritoJSON(idUs);
+        historialGuardado = operaciones.obtenerHistorialPedidosJSON(idUs); // Descargamos facturas
     }
 
     // 2. Variables del Radar Global
@@ -171,15 +177,12 @@
         </div>
 
         <div style="margin-top: 80px;">
-            <div style="border-bottom: 1px solid #333; padding-bottom: 15px;">
+            <div style="border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 30px;">
                 <h2 style="font-family: var(--font-heading); font-size: 2.2rem; color: #FFF; margin: 0; letter-spacing: -1px;">HISTORIAL DE ADQUISICIONES</h2>
-                <p style="color: #888; font-family: var(--font-tech); margin: 5px 0 0;">// REGISTRO DE TRANSACCIONES DEL CARRITO EN POSTGRESQL</p>
+                <p style="color: #888; font-family: var(--font-tech); margin: 5px 0 0;">// REGISTRO DE TRANSACCIONES EN POSTGRESQL</p>
             </div>
-            <div style="background: rgba(10,10,10,0.5); border: 1px dashed #333; padding: 60px 20px; text-align: center; margin-top: 30px;">
-                <svg viewBox="0 0 24 24" width="50" height="50" fill="#444" style="margin-bottom: 20px;"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-                <h3 style="font-family: var(--font-tech); color: #666; font-size: 1.2rem; margin: 0 0 10px;">SIN ACTIVIDAD COMERCIAL</h3>
-                <p style="color: #444; font-family: var(--font-tech); font-size: 0.9rem;">El servidor central aún no ha registrado compras.</p>
-            </div>
+
+            <div id="historialGrid"></div>
         </div>
 
         <% } else if (rol == 2) { %>
@@ -284,7 +287,7 @@
             <button id="btn-undo-cart" class="btn-undo" data-target="true">RESTAR ÚLTIMO</button>
             <button id="btn-vaciar-carrito" class="btn-purgar" data-target="true">PURGAR SISTEMA</button>
         </div>
-        <button class="btn-primary" style="width: 100%;" data-target="true">PROCESAR PAGO >></button>
+        <a href="checkout.jsp" class="btn-primary" style="width: 100%; display: block; text-align: center; text-decoration: none; padding: 15px; box-sizing: border-box;" data-target="true">PROCESAR PAGO >></a>
     </div>
 </div>
 
@@ -380,15 +383,68 @@
 
 <!-- ================= ARCHIVOS DE SCRIPT ================= -->
 <script>
-    const datosDescargados = <%=favoritosGuardados%>;
-    if (datosDescargados) {
-        localStorage.setItem('vh_fav_items', JSON.stringify(datosDescargados));
-    } else {
-        localStorage.setItem('vh_fav_items', JSON.stringify([]));
+    // INYECCIÓN DE FAVORITOS Y CARRITO
+    const datosFavsDescargados = <%=favoritosGuardados%>;
+    if (datosFavsDescargados) localStorage.setItem('vh_fav_items', JSON.stringify(datosFavsDescargados));
+    else localStorage.setItem('vh_fav_items', JSON.stringify([]));
+
+    const datosCarritoDescargados = <%=carritoGuardado%>;
+    if (datosCarritoDescargados) localStorage.setItem('vh_cart_items', JSON.stringify(datosCarritoDescargados));
+    else localStorage.setItem('vh_cart_items', JSON.stringify([]));
+
+    // NUEVO: RENDERIZADO DEL HISTORIAL DE FACTURAS (ESTILO TÁCTICO)
+    const datosHistorialDescargados = <%=historialGuardado%>;
+    const historialGrid = document.getElementById('historialGrid');
+
+    if (historialGrid) {
+        if (datosHistorialDescargados && datosHistorialDescargados.length > 0) {
+            historialGrid.innerHTML = ''; // Limpiamos estado vacío
+
+            datosHistorialDescargados.forEach(factura => {
+                historialGrid.innerHTML += `
+                  <div style="background: linear-gradient(90deg, rgba(20,20,20,0.8) 0%, rgba(5,5,5,0.9) 100%); border: 1px solid #222; position: relative; padding: 30px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease; overflow: hidden; border-radius: 4px;" onmouseover="this.style.borderColor='var(--primary)'; this.style.boxShadow='0 0 20px rgba(212,255,0,0.05)';" onmouseout="this.style.borderColor='#222'; this.style.boxShadow='none';">
+
+                      <div style="position: absolute; left: 0; top: 0; height: 100%; width: 4px; background: var(--primary);"></div>
+
+                      <div style="display: flex; flex-direction: column; gap: 8px;">
+                          <div style="display: flex; align-items: center; gap: 12px;">
+                             <span style="background: rgba(212,255,0,0.1); border: 1px solid var(--primary); color: var(--primary); padding: 4px 8px; font-family: var(--font-tech); font-size: 0.7rem; font-weight: bold; letter-spacing: 1px; border-radius: 2px;">\${factura.metodo}</span>
+                             <span style="color: #666; font-size: 0.85rem; font-family: var(--font-tech);">AUTORIZACIÓN: \${factura.fecha}</span>
+                          </div>
+                          <h4 style="color: #FFF; font-family: var(--font-heading); margin: 0; font-size: 1.8rem; letter-spacing: 1px; text-transform: uppercase;">RECIBO \${factura.id}</h4>
+
+                          <div style="font-family: var(--font-tech); font-size: 0.8rem; color: #444; letter-spacing: 3px; margin-top: 5px;">
+                             ||| ||||||| || |||| |||||| ||
+                          </div>
+                      </div>
+
+                      <div style="text-align: right; display: flex; flex-direction: column; justify-content: center; align-items: flex-end;">
+                          <span style="color: #888; font-family: var(--font-tech); font-size: 0.85rem; margin-bottom: 2px;">MONTO DEBITADO</span>
+                          <span style="color: #FFF; font-family: var(--font-heading); font-size: 2.8rem; line-height: 1; text-shadow: 2px 2px 0px rgba(212,255,0,0.2);">$\${factura.total.toFixed(2)}</span>
+
+                          <span style="display: inline-flex; align-items: center; gap: 5px; color: #000; background: var(--primary); font-size: 0.75rem; font-family: var(--font-tech); letter-spacing: 1px; font-weight: bold; padding: 4px 10px; margin-top: 12px; border-radius: 2px;">
+                              <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                              TRANSFERENCIA OK
+                          </span>
+                      </div>
+                  </div>
+              `;
+            });
+        } else {
+            // ESTADO VACÍO (Sin compras)
+            historialGrid.innerHTML = `
+            <div style="background: rgba(10,10,10,0.5); border: 1px dashed #333; padding: 60px 20px; text-align: center; border-radius: 4px;">
+                <svg viewBox="0 0 24 24" width="50" height="50" fill="#444" style="margin-bottom: 20px;"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                <h3 style="font-family: var(--font-tech); color: #666; font-size: 1.2rem; margin: 0 0 10px;">SIN ACTIVIDAD COMERCIAL</h3>
+                <p style="color: #444; font-family: var(--font-tech); font-size: 0.9rem;">El servidor central aún no ha registrado compras.</p>
+            </div>
+          `;
+        }
     }
 </script>
 
 <script src="js/app.js"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         // Carga de Favoritos Dinámica (Rol 3)

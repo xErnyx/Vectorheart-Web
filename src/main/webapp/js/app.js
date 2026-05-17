@@ -218,12 +218,31 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Eliminar producto por completo
+    // Eliminar producto por completo CONECTADO A BD
     document.querySelectorAll('.remove-item-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
-        cart = cart.filter(item => item.id !== id);
-        updateCartUI();
+        btn.textContent = '...';
+
+        const formData = new URLSearchParams();
+        formData.append('action', 'remove');
+        formData.append('idProducto', id);
+
+        try {
+          const response = await fetch('CarritoServlet', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData.toString()
+          });
+          const result = await response.json();
+          if (result.status === 'success') {
+            cart = cart.filter(item => item.id !== id);
+            updateCartUI();
+          }
+        } catch (error) {
+          console.error("SYS.ERR // Falla al eliminar del carrito:", error);
+          btn.textContent = 'Error';
+        }
       });
     });
   }
@@ -240,13 +259,37 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Botón Vaciar
+  // Botón Vaciar CONECTADO A BD
   const btnVaciar = document.getElementById('btn-vaciar-carrito');
   if (btnVaciar) {
     if (typeof attachCursorHover === 'function') attachCursorHover([btnVaciar]);
-    btnVaciar.addEventListener('click', () => {
-      cart = [];
-      updateCartUI();
+    btnVaciar.addEventListener('click', async () => {
+      if (cart.length === 0) return;
+
+      const originalText = btnVaciar.textContent;
+      btnVaciar.textContent = 'PURGANDO...';
+      btnVaciar.style.color = '#FF003C';
+
+      const formData = new URLSearchParams();
+      formData.append('action', 'clear');
+
+      try {
+        const response = await fetch('CarritoServlet', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formData.toString()
+        });
+        const result = await response.json();
+        if (result.status === 'success') {
+          cart = [];
+          updateCartUI();
+        }
+      } catch (error) {
+        console.error("SYS.ERR // Falla al purgar carrito:", error);
+      } finally {
+        btnVaciar.textContent = originalText;
+        btnVaciar.style.color = '';
+      }
     });
   }
 
@@ -698,7 +741,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- LÓGICA DE BOTONES DE TARJETA Y PANEL DE FAVORITOS ---
     function attachCardButtonsLogic() {
-      // Lógica Carrito Original
+      // Lógica Carrito Original CONECTADA A JAVA
       document.querySelectorAll('.add-btn').forEach(button => {
         button.addEventListener('click', () => {
 
@@ -717,21 +760,54 @@ document.addEventListener('DOMContentLoaded', () => {
             return; // Corta el cable
           }
 
-          const productData = artDatabase.find(p => p.id === button.getAttribute('data-id'));
-          if (productData) { cart.push(productData); updateCartUI(); }
+          const productId = button.getAttribute('data-id');
+          const productData = artDatabase.find(p => p.id === productId);
+          if (!productData) return;
 
           const originalText = button.textContent;
-          button.textContent = 'DATOS GUARDADOS';
-          button.style.backgroundColor = '#FFF';
+          button.textContent = 'TRANSMITIENDO...';
+          button.style.backgroundColor = 'var(--primary)';
           button.style.color = '#000';
 
-          if (cartPanel) { cartPanel.classList.add('active'); if (favPanel) favPanel.classList.remove('active'); }
+          // EMPAQUETAMOS LOS DATOS Y DISPARAMOS AL SERVLET DEL CARRITO
+          const formData = new URLSearchParams();
+          formData.append('action', 'add');
+          formData.append('idProducto', productData.id);
+          formData.append('titulo', productData.title);
+          formData.append('imagen', productData.image);
+          formData.append('precio', productData.price);
 
-          setTimeout(() => {
-            button.textContent = originalText;
-            button.style.backgroundColor = 'transparent';
-            button.style.color = 'var(--text-light)';
-          }, 1000);
+          fetch('CarritoServlet', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData.toString()
+          })
+              .then(response => response.json())
+              .then(result => {
+                if (result.status === 'success') {
+                  cart.push(productData);
+                  updateCartUI();
+
+                  button.textContent = 'DATOS GUARDADOS';
+                  button.style.backgroundColor = '#FFF';
+
+                  if (cartPanel) { cartPanel.classList.add('active'); if (favPanel) favPanel.classList.remove('active'); }
+                } else {
+                  console.error("SYS.ERR //", result.message);
+                  button.textContent = 'ERROR EN SERVIDOR';
+                  button.style.backgroundColor = '#FF003C';
+                }
+              })
+              .catch(error => {
+                console.error("SYS.ERR // Falla de red:", error);
+              })
+              .finally(() => {
+                setTimeout(() => {
+                  button.textContent = originalText;
+                  button.style.backgroundColor = 'transparent';
+                  button.style.color = 'var(--text-light)';
+                }, 1500);
+              });
         });
       });
 
@@ -1053,4 +1129,218 @@ document.addEventListener('DOMContentLoaded', () => {
      08. FINALIZACIÓN Y VERIFICACIÓN POST-CARGA
      ========================================================================== */
   updateCartUI();
+
+  /* ==========================================================================
+     09. PASARELA DE PAGOS AVANZADA (STEAM LAYOUT + INLINE ERRORS)
+     ========================================================================== */
+  const checkoutTotalAmount = document.getElementById('checkoutTotalAmount');
+  const checkoutItemsList = document.getElementById('checkoutItemsList');
+  const btnConfirmPay = document.getElementById('btnConfirmPay');
+
+  const radioMethods = document.querySelectorAll('input[name="payMethod"]');
+  const cardFields = document.getElementById('cardFields');
+  const chkCard = document.getElementById('chkCard');
+  const chkDate = document.getElementById('chkDate');
+  const chkCvc = document.getElementById('chkCvc');
+  const cardIcon = document.getElementById('cardIcon');
+
+  // Nombres de los spans de error
+  const errCard = document.getElementById('errCard');
+  const errDate = document.getElementById('errDate');
+  const errCvc = document.getElementById('errCvc');
+  const errBill = document.getElementById('errBill');
+
+  const billFields = ['billNombre', 'billApellido', 'billDireccion', 'billCiudad', 'billPostal', 'billTelefono'];
+
+  // 1. RENDERIZADO DEL RESUMEN
+  if (checkoutTotalAmount && checkoutItemsList) {
+    if (cart.length === 0) {
+      window.location.href = 'index.jsp';
+    } else {
+      const total = cart.reduce((acc, curr) => acc + curr.price, 0);
+      checkoutTotalAmount.textContent = total.toFixed(2);
+
+      const groupedCart = {};
+      cart.forEach(item => {
+        if (!groupedCart[item.id]) groupedCart[item.id] = { ...item, qty: 0 };
+        groupedCart[item.id].qty += 1;
+      });
+
+      checkoutItemsList.innerHTML = '';
+      Object.values(groupedCart).forEach(product => {
+        checkoutItemsList.innerHTML += `
+                <div class="summary-item">
+                    <img src="${product.image}" alt="Arte">
+                    <div style="flex: 1;">
+                        <h4 style="font-family: var(--font-tech); font-size: 0.9rem; color: #FFF; margin: 0;">${product.title}</h4>
+                        <span style="color: #666; font-size: 0.75rem; font-family: var(--font-tech);">CANTIDAD: ${product.qty}</span>
+                    </div>
+                    <div style="font-family: var(--font-tech); color: var(--primary);">
+                        $${(product.price * product.qty).toFixed(2)}
+                    </div>
+                </div>
+            `;
+      });
+    }
+  }
+
+  // 2. ALTERNAR MÉTODOS DE PAGO
+  if (radioMethods.length > 0) {
+    radioMethods.forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        document.querySelectorAll('.pay-method-label').forEach(lbl => {
+          lbl.style.borderColor = '#333';
+          lbl.style.background = '#000';
+          lbl.querySelector('span').style.color = '#888';
+        });
+        e.target.parentElement.style.borderColor = 'var(--primary)';
+        e.target.parentElement.style.background = 'rgba(212, 255, 0, 0.05)';
+        e.target.parentElement.querySelector('span').style.color = '#FFF';
+
+        if(cardFields) cardFields.style.display = e.target.value === 'TARJETA' ? 'block' : 'none';
+      });
+    });
+  }
+
+  // 3. AUTO-DETECCIÓN DE FRANQUICIA (IMÁGENES OFICIALES)
+  if(chkCard) {
+    chkCard.addEventListener('input', function (e) {
+      let value = e.target.value.replace(/\D/g, '');
+      let formattedValue = '';
+      for (let i = 0; i < value.length; i++) {
+        if (i > 0 && i % 4 === 0) formattedValue += ' ';
+        formattedValue += value[i];
+      }
+      e.target.value = formattedValue;
+
+      // ==============================================================
+      // IMÁGENES OFICIALES (Cero deformaciones, calidad perfecta)
+      // ==============================================================
+      // Enlace Base64: La imagen está incrustada, nunca se romperá y carga al instante
+      const imgVisa = `<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MCAxNiI+PHBhdGggZmlsbD0iIzFBMUY3MSIgZD0iTTIxLjggMS4xbC00IDE0LjZoLTQuM2wzLjktMTQuNmg0LjR6TTMyLjggMWMtMS44IDAtNC4zLjUtNS45IDItMiAxLjgtMiA0LjQgMCA1LjggMS41IDEgMi40IDEuNCAzLjYgMiAxLjkuOCAyLjMgMS41IDIuMyAyLjYgMCAxLjUtMi4xIDIuNC00LjEgMi40LTIuNSAwLTQuMS0uNC01LjYtMWwtLjggNS4yYzEuNC42IDMuOCAxIDYuMyAxIDYuNSAwIDEwLjgtMyAxMC44LTcuOCAwLTIuNi0xLjUtNC40LTQuNi01LjgtMS42LS43LTIuNi0xLjItMi42LTIgMC0uOCAxLTEuNCAyLjktMS40IDEuNyAwIDMuMi4zIDQuNC42bC44LTUuMWMtMS42LS40LTMuNi0uOC02LjMtLTh6TTE3IDEuMUgxMmMtMSAwLTEuNy4zLTIuMSAxLjRsLTggMTMuMmg0LjZsLjktMi42aDYuN2wxIDIuNmg0LjhMMTcgMS4xem0tNC4yIDguNUwxNC43IDRoLjJsMS4zIDUuNmgtMy40ek00LjMgMS4xTDAgMTUuN2g0LjVsMS42LThjLjQtMiAxLTUgMi42LTYuNkg0LjN6Ii8+PC9zdmc+" alt="Visa">`;
+      const imgMastercard = `<img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard">`;
+      const imgAmex       = `<img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/American_Express_logo_%282018%29.svg" alt="Amex">`;
+      const imgDiscover   = `<img src="https://upload.wikimedia.org/wikipedia/commons/5/57/Discover_Card_logo.svg" alt="Discover">`;
+      const imgJcb        = `<img src="https://upload.wikimedia.org/wikipedia/commons/4/40/JCB_logo.svg" alt="JCB">`;
+      const imgDiners     = `<img src="https://upload.wikimedia.org/wikipedia/commons/a/a6/Diners_Club_Logo3.svg" alt="Diners">`;
+
+      // Ícono genérico (gris) si no se reconoce la tarjeta
+      const svgGeneric    = `<svg viewBox="0 0 24 24" fill="#555"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>`;
+
+      // ==============================================================
+      // ASIGNACIÓN POR NÚMERO IDENTIFICADOR (BIN)
+      // ==============================================================
+      if (value.startsWith('4')) {
+        cardIcon.innerHTML = imgVisa;
+      } else if (value.startsWith('5')) {
+        cardIcon.innerHTML = imgMastercard;
+      } else if (value.startsWith('34') || value.startsWith('37')) {
+        cardIcon.innerHTML = imgAmex;
+      } else if (value.startsWith('6')) {
+        cardIcon.innerHTML = imgDiscover;
+      } else if (value.startsWith('35')) {
+        cardIcon.innerHTML = imgJcb;
+      } else if (value.startsWith('30') || value.startsWith('36') || value.startsWith('38')) {
+        cardIcon.innerHTML = imgDiners;
+      } else {
+        cardIcon.innerHTML = svgGeneric;
+      }
+    });
+  }
+
+  if(chkDate) chkDate.addEventListener('input', e => {
+    let v = e.target.value.replace(/\D/g, '');
+    if (v.length > 2) v = v.substring(0, 2) + '/' + v.substring(2, 4);
+    e.target.value = v;
+  });
+  if(chkCvc) chkCvc.addEventListener('input', e => e.target.value = e.target.value.replace(/\D/g, ''));
+
+  // 4. VALIDACIÓN GLOBAL (INLINE ERRORS) Y DISPARO
+  if(btnConfirmPay) {
+    btnConfirmPay.addEventListener('click', () => {
+      const selectedMethod = document.querySelector('input[name="payMethod"]:checked').value;
+      let hasError = false;
+
+      // Resetear visuales
+      document.querySelectorAll('.smart-input-group input').forEach(input => input.style.borderColor = '#333');
+      [errCard, errDate, errCvc, errBill].forEach(e => { if(e) e.style.display = 'none'; });
+
+      // ==========================================
+      // A) VALIDACIÓN OBLIGATORIA PARA TODOS (INCLUYE PAYPAL)
+      // ==========================================
+      for (let id of billFields) {
+        const field = document.getElementById(id);
+        if (field && field.value.trim() === '') {
+          errBill.style.display = 'block';
+          field.style.borderColor = '#FF003C';
+          hasError = true;
+        }
+      }
+
+      // ==========================================
+      // B) VALIDACIÓN EXCLUSIVA DE TARJETA
+      // ==========================================
+      if (selectedMethod === 'TARJETA') {
+        const cleanCard = chkCard.value.replace(/\s/g, '');
+        if (cleanCard.length < 15) {
+          errCard.style.display = 'block';
+          chkCard.style.borderColor = '#FF003C';
+          hasError = true;
+        }
+        if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(chkDate.value)) {
+          errDate.style.display = 'block';
+          chkDate.style.borderColor = '#FF003C';
+          hasError = true;
+        }
+        if (chkCvc.value.length < 3) {
+          errCvc.style.display = 'block';
+          chkCvc.style.borderColor = '#FF003C';
+          hasError = true;
+        }
+      }
+
+      if (hasError) return; // Si hay error en facturación o tarjeta, abortar
+
+      // EFECTO DE CARGA
+      const originalText = btnConfirmPay.textContent;
+      // Texto dinámico según el método
+      btnConfirmPay.textContent = selectedMethod === 'TARJETA' ? 'AUTORIZANDO CON EL BANCO...' : 'ENLAZANDO CON RED CRIPTO/PAYPAL...';
+      btnConfirmPay.style.background = '#FFF';
+      btnConfirmPay.style.color = '#000';
+
+      const total = cart.reduce((acc, curr) => acc + curr.price, 0);
+      const formData = new URLSearchParams();
+      formData.append('metodo', selectedMethod);
+      formData.append('total', total);
+
+      // ENVIAR A POSTGRESQL
+      fetch('FacturacionServlet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData.toString()
+      })
+          .then(response => response.json())
+          .then(result => {
+            if (result.status === 'success') {
+              btnConfirmPay.textContent = `[ RECIBO #${result.id_factura} APROBADO ]`;
+              btnConfirmPay.style.background = 'var(--primary)';
+
+              setTimeout(() => {
+                cart = [];
+                localStorage.setItem('vh_cart_items', JSON.stringify([]));
+                window.location.href = 'perfil.jsp';
+              }, 2000);
+            } else {
+              errBill.innerHTML = `[SYS.ERR] RECHAZADO POR LA RED.`;
+              errBill.style.display = 'block';
+              btnConfirmPay.textContent = originalText;
+              btnConfirmPay.style.background = 'var(--primary)';
+            }
+          })
+          .catch(error => {
+            errBill.innerHTML = `[SYS.ERR] FALLA DE CONEXIÓN CON EL SERVIDOR.`;
+            errBill.style.display = 'block';
+          });
+    });
+  }
 });

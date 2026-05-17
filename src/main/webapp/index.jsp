@@ -4,7 +4,10 @@
   // SISTEMA DE RADAR: Verificamos si el usuario pasó por el Login
   boolean isLogged = false;
   String rolUsuario = "0"; // 0 = Observador/No logueado
-  String favoritosGuardados = "[]"; // Memoria por defecto
+
+  // --- MEMORIA POR DEFECTO ---
+  String favoritosGuardados = "[]";
+  String carritoGuardado = "[]"; // FIX: AHORA SÍ EXISTE ESTA VARIABLE
 
   if (session.getAttribute("usuario_valido") != null) {
     isLogged = true;
@@ -14,7 +17,10 @@
     if (session.getAttribute("usuario_id") != null) {
       int idUs = (Integer) session.getAttribute("usuario_id");
       OperacionesCliente operaciones = new OperacionesCliente();
+
+      // Descargamos de PostgreSQL
       favoritosGuardados = operaciones.obtenerFavoritosJSON(idUs);
+      carritoGuardado = operaciones.obtenerCarritoJSON(idUs); // FIX: DESCARGAMOS EL CARRITO
     }
   }
 %>
@@ -324,7 +330,7 @@
       <button id="btn-vaciar-carrito" class="btn-purgar" data-target="true">PURGAR SISTEMA</button>
     </div>
 
-    <button class="btn-primary" style="width: 100%;" data-target="true">PROCESAR PAGO >></button>
+    <a href="checkout.jsp" class="btn-primary" style="width: 100%; display: block; text-align: center; text-decoration: none; padding: 15px; box-sizing: border-box;" data-target="true">PROCESAR PAGO >></a>
   </div>
 </div>
 
@@ -436,16 +442,20 @@
 
 <!-- ================= ARCHIVOS DE SCRIPT ================= -->
 <script>
-  // Transferimos el estado de seguridad de Java a variables globales de JS
-  const SISTEMA_LOGUEADO = <%= isLogged %>;
-  const ROL_ACTUAL = "<%= rolUsuario %>";
-
-  // INYECCIÓN DE MEMORIA PRIMORDIAL PARA EL CATÁLOGO
-  const datosDescargados = <%=favoritosGuardados%>;
-  if (datosDescargados) {
-    localStorage.setItem('vh_fav_items', JSON.stringify(datosDescargados));
+  // INYECCIÓN DE FAVORITOS
+  const datosFavsDescargados = <%=favoritosGuardados%>;
+  if (datosFavsDescargados) {
+    localStorage.setItem('vh_fav_items', JSON.stringify(datosFavsDescargados));
   } else {
     localStorage.setItem('vh_fav_items', JSON.stringify([]));
+  }
+
+  // INYECCIÓN DE CARRITO
+  const datosCarritoDescargados = <%=carritoGuardado%>;
+  if (datosCarritoDescargados) {
+    localStorage.setItem('vh_cart_items', JSON.stringify(datosCarritoDescargados));
+  } else {
+    localStorage.setItem('vh_cart_items', JSON.stringify([]));
   }
 </script>
 

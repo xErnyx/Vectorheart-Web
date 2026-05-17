@@ -249,13 +249,13 @@
   <!-- Enlaces de Navegación -->
   <ul class="menu-links" style="margin-bottom: 10px;">
     <li>
-      <a href="index.jsp" data-target="true" style="display: flex; align-items: center; gap: 15px;">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg> INICIO
+      <a href="login.jsp" data-target="true" style="display: flex; align-items: center; gap: 15px;">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> LOGIN / REGISTRO
       </a>
     </li>
     <li>
-      <a href="login.jsp" data-target="true" style="display: flex; align-items: center; gap: 15px;">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> LOGIN
+      <a href="index.jsp" data-target="true" style="display: flex; align-items: center; gap: 15px;">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg> INICIO
       </a>
     </li>
     <li>

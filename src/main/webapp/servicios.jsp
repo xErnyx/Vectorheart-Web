@@ -252,7 +252,7 @@
       <button id="btn-vaciar-carrito" class="btn-purgar" data-target="true">PURGAR SISTEMA</button>
     </div>
 
-    <button class="btn-primary" style="width: 100%;" data-target="true">PROCESAR PAGO >></button>
+    <a href="checkout.jsp" class="btn-primary" style="width: 100%; display: block; text-align: center; text-decoration: none; padding: 15px; box-sizing: border-box;" data-target="true">PROCESAR PAGO >></a>
   </div>
 </div>
 
