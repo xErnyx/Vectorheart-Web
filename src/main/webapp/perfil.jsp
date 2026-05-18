@@ -1,4 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.util.List" %>
+<%@ page import="com.productos.datos.Factura" %>
+<%@ page import="com.productos.negocio.OperacionesFactura" %>
 <%@ page import="com.productos.negocio.OperacionesCliente" %>
 <%
     // 1. ESCUDO DE SEGURIDAD ABSOLUTO
@@ -14,11 +17,22 @@
 
     if (session.getAttribute("usuario_id") != null) {
         int idUs = (Integer) session.getAttribute("usuario_id");
+        int rolValidacion = (Integer) session.getAttribute("usuario_rol"); // Verificamos quién eres
+
         OperacionesCliente operaciones = new OperacionesCliente();
+        OperacionesFactura opFactura = new OperacionesFactura();
+        List<Factura> historialCompras = opFactura.obtenerHistorial(idUs);
 
         favoritosGuardados = operaciones.obtenerFavoritosJSON(idUs);
         carritoGuardado = operaciones.obtenerCarritoJSON(idUs);
-        historialGuardado = operaciones.obtenerHistorialPedidosJSON(idUs); // Descargamos facturas
+        historialGuardado = operaciones.obtenerHistorialPedidosJSON(idUs);
+
+        // ¡NUEVO! Si eres el Administrador Supremo, descargas la matrix completa
+        if (rolValidacion == 1) {
+            request.setAttribute("usuariosGlobales", operaciones.obtenerTodosLosUsuariosJSON());
+            request.setAttribute("ingresosTotales", opFactura.obtenerIngresosGlobales());
+            request.setAttribute("facturasTotales", opFactura.obtenerTotalFacturas());
+        }
     }
 
     // 2. Variables del Radar Global
@@ -70,7 +84,7 @@
             background-size: 20px 20px; opacity: 0.05; pointer-events: none;
         }
         .profile-avatar {
-            width: 140px; height: 140px;
+            width: 140px; height: 140px; flex-shrink: 0;
             border-radius: 50%; border: 3px solid <%=colorRol%>;
             object-fit: cover; position: relative; z-index: 10;
             transform: translateY(40px); background: var(--dark);
@@ -137,7 +151,7 @@
                 <h1 style="font-family: var(--font-heading); font-size: 4.5rem; margin: 0; line-height: 0.9; text-transform: uppercase; color: var(--text-light); text-shadow: 2px 2px 0 #000;"><%=nombre%></h1>
             </div>
 
-            <a href="logout.jsp" data-target="true" style="background: transparent; color: #FF003C; border: 1px dashed #FF003C; padding: 12px 25px; font-family: var(--font-tech); font-weight: bold; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; margin-bottom: 10px;">
+            <a href="logout.jsp" data-target="true" style="background: transparent; color: #FF003C; border: 1px dashed #FF003C; padding: 12px 25px; font-family: var(--font-tech); font-weight: bold; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; margin-bottom: 10px; flex-shrink: 0; white-space: nowrap;">
                 ROMPER ENLACE
             </a>
         </div>
@@ -201,10 +215,40 @@
             </a>
         </div>
 
-        <% } else if (rol == 1) { %>
-        <div style="margin-top: 80px; text-align: center; border: 1px dashed <%=colorRol%>; padding: 80px 20px; background: rgba(255,0,60,0.02);">
-            <h2 style="font-family: var(--font-heading); color: <%=colorRol%>; font-size: 2.5rem; margin: 0 0 15px;">CENTRO DE GRÁFICAS INACTIVO</h2>
-            <p style="color: #888; font-family: var(--font-tech);">El mapeo de ventas totales y gestión de usuarios está bloqueado hasta la Fase 4.</p>
+        <% } else if (rol == 1) {
+            double ingresos = request.getAttribute("ingresosTotales") != null ? (Double)request.getAttribute("ingresosTotales") : 0.0;
+            int facturas = request.getAttribute("facturasTotales") != null ? (Integer)request.getAttribute("facturasTotales") : 0;
+        %>
+        <div style="margin-top: 80px; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 30px;">
+            <h2 style="font-family: var(--font-heading); font-size: 2.2rem; color: #FFF; margin: 0; letter-spacing: -1px;">CENTRO DE MANDO SUPREMO</h2>
+            <p style="color: <%=colorRol%>; font-family: var(--font-tech); margin: 5px 0 0;">// MONITOREO FINANCIERO Y CONTROL DE OPERADORES</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 50px;">
+            <div style="background: rgba(255,0,60,0.05); border: 1px solid <%=colorRol%>; padding: 40px 30px; text-align: center; border-radius: 4px;">
+                <span style="color: #888; font-family: var(--font-tech); font-size: 1rem; letter-spacing: 2px; display: block; margin-bottom: 10px;">INGRESOS TOTALES DEL SISTEMA</span>
+                <h3 style="color: #FFF; font-family: var(--font-heading); font-size: 4.5rem; margin: 0; text-shadow: 0 0 20px rgba(255,0,60,0.4); ">$<%= String.format("%.2f", ingresos) %></h3>
+            </div>
+            <div style="background: rgba(255,0,60,0.05); border: 1px solid <%=colorRol%>; padding: 40px 30px; text-align: center; border-radius: 4px;">
+                <span style="color: #888; font-family: var(--font-tech); font-size: 1rem; letter-spacing: 2px; display: block; margin-bottom: 10px;">TRANSACCIONES APROBADAS</span>
+                <h3 style="color: #FFF; font-family: var(--font-heading); font-size: 4.5rem; margin: 0; text-shadow: 0 0 20px rgba(255,0,60,0.4); "><%= facturas %></h3>
+            </div>
+        </div>
+
+        <h3 style="font-family: var(--font-heading); color: #FFF; font-size: 1.8rem; margin-bottom: 15px;">REGISTRO DE PERSONAL (BASE DE DATOS)</h3>
+        <div style="overflow-x: auto; background: #050505; border: 1px solid #222; border-radius: 4px;">
+            <table style="width: 100%; border-collapse: collapse; font-family: var(--font-tech); text-align: left;">
+                <thead>
+                <tr style="background: rgba(255,0,60,0.08); border-bottom: 2px solid <%=colorRol%>;">
+                    <th style="padding: 15px; color: <%=colorRol%>; font-size: 0.85rem; width: 15%;">ID RASTREO</th>
+                    <th style="padding: 15px; color: <%=colorRol%>; font-size: 0.85rem; width: 35%;">IDENTIFICACIÓN</th>
+                    <th style="padding: 15px; color: <%=colorRol%>; font-size: 0.85rem; width: 30%;">CORREO ENCRIPTADO</th>
+                    <th style="padding: 15px; color: <%=colorRol%>; font-size: 0.85rem; text-align: center; width: 20%;">NIVEL DE ACCESO</th>
+                </tr>
+                </thead>
+                <tbody id="usuariosGrid">
+                </tbody>
+            </table>
         </div>
         <% } %>
 
@@ -457,7 +501,9 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Carga de Favoritos Dinámica (Rol 3)
+        // =========================================================
+        // 1. CARGA DE FAVORITOS DINÁMICA (Rol 3)
+        // =========================================================
         const favGrid = document.getElementById('profileFavGrid');
         if(favGrid) {
             const favs = JSON.parse(localStorage.getItem('vh_fav_items')) || [];
@@ -480,6 +526,34 @@
                     attachCursorHover(document.querySelectorAll('.art-card-preview'));
                 }
             }
+        }
+
+        // =========================================================
+        // 2. RENDERIZADO DEL PANEL SUPREMO (Usuarios - Rol 1)
+        // =========================================================
+        const usuariosGrid = document.getElementById('usuariosGrid');
+        // Leemos la variable enviada desde Java
+        const jsonUsuarios = '<%= request.getAttribute("usuariosGlobales") != null ? request.getAttribute("usuariosGlobales") : "[]" %>';
+
+        if (usuariosGrid && jsonUsuarios !== "[]") {
+            const datosUsuarios = JSON.parse(jsonUsuarios);
+
+            datosUsuarios.forEach(user => {
+                let rolBadge = '';
+                // Colores tácticos para diferenciar al personal
+                if(user.rol === 1) rolBadge = '<span style="background: #FF003C; color: #FFF; padding: 6px 12px; border-radius: 2px; font-weight: bold; font-size: 0.75rem; letter-spacing: 1px;">ADMINISTRADOR</span>';
+                else if(user.rol === 2) rolBadge = '<span style="background: rgba(212,255,0,0.1); border: 1px solid #D4FF00; color: #D4FF00; padding: 6px 12px; border-radius: 2px; font-weight: bold; font-size: 0.75rem; letter-spacing: 1px;">GESTOR LOGÍSTICO</span>';
+                else rolBadge = '<span style="background: rgba(93,0,255,0.1); border: 1px solid #5D00FF; color: #5D00FF; padding: 6px 12px; border-radius: 2px; font-weight: bold; font-size: 0.75rem; letter-spacing: 1px;">CLIENTE ESTÁNDAR</span>';
+
+                usuariosGrid.innerHTML += `
+                    <tr style="border-bottom: 1px solid #111; transition: 0.3s;" onmouseover="this.style.background='rgba(255,0,60,0.05)'" onmouseout="this.style.background='transparent'">
+                        <td style="padding: 15px; color: #666; font-weight: bold;">[ \${user.id} ]</td>
+                        <td style="padding: 15px; color: #FFF; font-size: 1.1rem; text-transform: uppercase;">\${user.nombre}</td>
+                        <td style="padding: 15px; color: #888; font-size: 0.9rem;">\${user.correo}</td>
+                        <td style="padding: 15px; text-align: center;">\${rolBadge}</td>
+                    </tr>
+                `;
+            });
         }
     });
 </script>

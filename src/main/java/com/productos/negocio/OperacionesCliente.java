@@ -238,36 +238,74 @@ public class OperacionesCliente {
         }
         return -1;
     }
+
     // =========================================================
-    // MÓDULO 5: EXTRACCIÓN DE HISTORIAL DE ADQUISICIONES
+    // MÓDULO 5: EXTRACCIÓN DE HISTORIAL PARA EL FRONTEND (JSON)
     // =========================================================
     public String obtenerHistorialPedidosJSON(int idUsuario) {
-        // Obtenemos los pedidos ordenados del más reciente al más antiguo
-        String sql = "SELECT id_pedido, total, metodo_pago, fecha_compra FROM tb_pedido WHERE id_usuario = ? ORDER BY fecha_compra DESC";
         StringBuilder json = new StringBuilder("[");
+        // Buscamos en nuestra tabla oficial y real: tb_factura
+        String sql = "SELECT * FROM tb_factura WHERE id_usuario = ? ORDER BY id_factura DESC";
+        com.productos.datos.Conexion db = new com.productos.datos.Conexion();
 
-        Conexion db = new Conexion();
-        try (Connection con = db.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (java.sql.Connection con = db.getConexion();
+             java.sql.PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, idUsuario);
-            ResultSet rs = ps.executeQuery();
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                boolean first = true;
+                while (rs.next()) {
+                    if (!first) json.append(",");
 
-            boolean primero = true;
-            while (rs.next()) {
-                if (!primero) json.append(",");
-                json.append("{")
-                        .append("\"id\":\"VH-REQ-00").append(rs.getInt("id_pedido")).append("\",") // Damos un formato de serie táctico
-                        .append("\"total\":").append(rs.getDouble("total")).append(",")
-                        .append("\"metodo\":\"").append(rs.getString("metodo_pago")).append("\",")
-                        .append("\"fecha\":\"").append(rs.getDate("fecha_compra")).append("\"")
-                        .append("}");
-                primero = false;
+                    // Formateamos la fecha para que se vea táctica (Ej: 2026-05-18 14:30)
+                    String fechaF = rs.getTimestamp("fecha").toString().substring(0, 16);
+                    // Formateamos el ID a 6 dígitos (Ej: 000001)
+                    String idF = String.format("%06d", rs.getInt("id_factura"));
+
+                    json.append("{");
+                    json.append("\"id\":\"").append(idF).append("\",");
+                    json.append("\"metodo\":\"").append(rs.getString("metodo_pago")).append("\",");
+                    json.append("\"total\":").append(rs.getDouble("total_pagado")).append(",");
+                    json.append("\"fecha\":\"").append(fechaF).append("\"");
+                    json.append("}");
+
+                    first = false;
+                }
             }
-        } catch (SQLException e) {
-            System.out.println("SYS.ERR // Falla al descargar historial: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("SYS.ERR // Falla al empaquetar JSON de historial: " + e.getMessage());
         }
+        json.append("]");
+        return json.toString();
+    }
 
+    // =========================================================
+    // MÓDULO ADMINISTRADOR: LISTADO DE PERSONAL TÁCTICO
+    // =========================================================
+    public String obtenerTodosLosUsuariosJSON() {
+        StringBuilder json = new StringBuilder("[");
+        // Ajustado a tus columnas reales: id_per (Rol) y id_us (ID)
+        String sql = "SELECT * FROM tb_usuario ORDER BY id_per ASC, id_us ASC";
+        com.productos.datos.Conexion db = new com.productos.datos.Conexion();
+
+        try (java.sql.Connection con = db.getConexion();
+             java.sql.PreparedStatement ps = con.prepareStatement(sql);
+             java.sql.ResultSet rs = ps.executeQuery()) {
+
+            boolean first = true;
+            while (rs.next()) {
+                if (!first) json.append(",");
+                json.append("{");
+                json.append("\"id\":").append(rs.getInt("id_us")).append(",");
+                json.append("\"nombre\":\"").append(rs.getString("nombre_us")).append("\",");
+                json.append("\"correo\":\"").append(rs.getString("correo_us")).append("\",");
+                json.append("\"rol\":").append(rs.getInt("id_per"));
+                json.append("}");
+                first = false;
+            }
+        } catch (Exception e) {
+            System.out.println("SYS.ERR // Falla al extraer usuarios globales: " + e.getMessage());
+        }
         json.append("]");
         return json.toString();
     }
