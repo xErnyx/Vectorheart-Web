@@ -186,9 +186,19 @@
         </div>
 
         <% } else if (rol == 2) { %>
-        <div style="margin-top: 80px; text-align: center; border: 1px dashed <%=colorRol%>; padding: 80px 20px; background: rgba(212,255,0,0.02);">
-            <h2 style="font-family: var(--font-heading); color: <%=colorRol%>; font-size: 2.5rem; margin: 0 0 15px;">PANEL DE INVENTARIO CERRADO</h2>
-            <p style="color: #888; font-family: var(--font-tech);">Sistema de subida y edición de arte pendiente de conexión a PostgreSQL (CRUD).</p>
+        <div style="margin-top: 80px; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 30px;">
+            <h2 style="font-family: var(--font-heading); font-size: 2.2rem; color: #FFF; margin: 0; letter-spacing: -1px;">TERMINAL LOGÍSTICA</h2>
+            <p style="color: <%=colorRol%>; font-family: var(--font-tech); margin: 5px 0 0;">// ACCESO DIRECTO AL NÚCLEO DE POSTGRESQL</p>
+        </div>
+
+        <div style="background: rgba(212,255,0,0.02); border: 1px solid #333; border-left: 4px solid <%=colorRol%>; padding: 40px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <h3 style="color: #FFF; font-family: var(--font-heading); font-size: 1.8rem; margin: 0 0 10px;">GESTIÓN DE ARTE VECTORIAL</h3>
+                <p style="color: #888; font-family: var(--font-tech); font-size: 0.9rem; margin: 0; max-width: 400px;">Sube nuevos productos, asigna precios y categorías. Los cambios se reflejarán instantáneamente en el catálogo global.</p>
+            </div>
+            <a href="inventario.jsp" style="background: <%=colorRol%>; color: #000; padding: 15px 30px; font-family: var(--font-tech); font-weight: bold; text-decoration: none; text-transform: uppercase; transition: 0.3s;">
+                ABRIR TERMINAL >>
+            </a>
         </div>
 
         <% } else if (rol == 1) { %>

@@ -593,12 +593,12 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // --- 05.3 Ejecutor Central de la API ---
+    // --- 05.3 Ejecutor Central de la API (HÍBRIDO: UNSPLASH + POSTGRESQL) ---
     window.executeAPI = async function(query, isNewSearch = true) {
       try {
         if (isNewSearch) {
           currentPage = 1;
-          catalogGrid.innerHTML = '<div style="color:var(--primary); font-family:var(--font-tech); font-size:1.2rem; grid-column: 1/-1; text-align:center;">[ PROCESANDO SOLICITUD EN RED UNSPLASH... ]</div>';
+          catalogGrid.innerHTML = '<div style="color:var(--primary); font-family:var(--font-tech); font-size:1.2rem; grid-column: 1/-1; text-align:center;">[ PROCESANDO SOLICITUD EN RED Y NÚCLEO LOCAL... ]</div>';
           loadMoreBtn.style.display = 'none';
         } else {
           currentPage++;
@@ -609,38 +609,75 @@ document.addEventListener('DOMContentLoaded', () => {
         const ori = document.querySelector('input[name="ori"]:checked').value;
         const safeQuery = encodeURIComponent(query);
 
-        // Pedimos 30 items por página
+        // 1. PEDIDO A LA API EXTERNA (UNSPLASH)
         let url = `https://api.unsplash.com/search/photos?query=${safeQuery}&client_id=${UNSPLASH_ACCESS_KEY}&per_page=30&page=${currentPage}&orientation=${ori}`;
         if (col !== "") url += `&color=${col}`;
 
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Fallo en la comunicación');
-        const json = await response.json();
+        const unsplashPromise = fetch(url).then(res => res.json());
 
-        if (isNewSearch) matchCount.textContent = `${json.total} RESULTADOS`;
+        // 2. PEDIDO A NUESTRA BASE DE DATOS LOCAL (Solo se busca en la página 1)
+        let dbPromise = Promise.resolve([]);
+        if (isNewSearch) {
+          dbPromise = fetch('api/catalogo')
+              .then(res => res.ok ? res.json() : [])
+              .catch(() => []); // Si la BD falla, no rompe la página
+        }
 
+        // Ejecutar ambas búsquedas en paralelo (Máxima velocidad)
+        const [json, dbJson] = await Promise.all([unsplashPromise, dbPromise]);
+
+        if (isNewSearch) matchCount.textContent = `${json.total + dbJson.length} RESULTADOS`;
+
+        // =========================================================
+        // ADAPTADOR: OBRAS DE POSTGRESQL
+        // =========================================================
+        const mappedDbItems = dbJson.map(item => {
+          // Generador de resolución táctica simulada
+          let dim = "2000 x 2000 PX";
+          if (item.formato && item.formato.toLowerCase().includes('landscape')) dim = "3840 x 2160 PX";
+          if (item.formato && item.formato.toLowerCase().includes('portrait')) dim = "2160 x 3840 PX";
+
+          // Traductor de colores a Hex
+          let hex = "#D4FF00";
+          if (item.color_base && item.color_base.toLowerCase().includes('magenta')) hex = "#FF00FF";
+          if (item.color_base && item.color_base.toLowerCase().includes('cyan')) hex = "#00FFFF";
+          if (item.color_base && item.color_base.toLowerCase().includes('oscuro')) hex = "#111111";
+
+          // Extractor inteligente de etiquetas
+          let tags = ["NÚCLEO", "V-HEART"];
+          if (item.categoria) tags.unshift(item.categoria.split(' ')[0]);
+
+          return {
+            id: `VH-${item.id_pr.toString().padStart(4, '0')}`, // Transforma el ID 3 en VH-0003
+            title: item.titulo.toUpperCase(),
+            artist: item.artista,
+            exhibitions: `Bóveda Local / PostgreSQL`,
+            desc: `Carga Logística. Formato: ${item.formato} | Color: ${item.color_base}`,
+            image: item.ruta_imagen,
+            price: item.precio,
+            rating: item.amenaza,
+            status: 'NÚCLEO', // Etiqueta roja exclusiva
+            hexColor: hex,
+            dimensions: dim,
+            likes: Math.floor(Math.random() * 800) + 200, // Simulador de popularidad
+            tags: tags
+          };
+        });
+
+        // =========================================================
+        // ADAPTADOR: OBRAS DE UNSPLASH (API INTACTA)
+        // =========================================================
         const newItems = json.results.map((item, index) => {
           const priceCalc = (item.likes % 150) + 40;
           let itemTitle = item.description || item.alt_description || `ARCHIVO-${item.id.substring(0,4)}`;
           if (itemTitle.length > 30) itemTitle = itemTitle.substring(0, 30) + '...';
 
-          // --- NUEVA LÓGICA INTELIGENTE DE ETIQUETAS ---
           let extractedTags = [];
-
-          // 1. Si Unsplash nos da tags reales, los usamos
           if (item.tags && item.tags.length > 0) {
             extractedTags = item.tags.slice(0, 4).map(t => t.title);
-          }
-          // 2. Si no hay tags, usamos las palabras más largas de la descripción como tags
-          else if (item.alt_description) {
-            extractedTags = item.alt_description
-              .replace(/[^a-zA-Z\s]/g, '') // Quitamos comas o puntos
-              .split(' ')
-              .filter(word => word.length > 4) // Solo palabras de más de 4 letras
-              .slice(0, 3); // Tomamos máximo 3
-          }
-          // 3. Fallback absoluto de emergencia
-          else {
+          } else if (item.alt_description) {
+            extractedTags = item.alt_description.replace(/[^a-zA-Z\s]/g, '').split(' ').filter(word => word.length > 4).slice(0, 3);
+          } else {
             extractedTags = ["VECTOR", "SISTEMA", "OP-01"];
           }
 
@@ -654,25 +691,22 @@ document.addEventListener('DOMContentLoaded', () => {
             price: priceCalc,
             rating: (item.likes % 3) + 3,
             status: (index % 5 === 0) ? 'NUEVO' : 'ESTANDAR',
-
-            // --- DATOS TÁCTICOS ---
             hexColor: item.color || "#000000",
             dimensions: `${item.width} x ${item.height} PX`,
             likes: item.likes,
-
-            // Inyectamos los tags inteligentes que acabamos de generar
             tags: extractedTags
           };
         });
 
+        // 3. MEZCLAR EL SISTEMA (Las obras de PostgreSQL van primero)
         if (isNewSearch) {
-          artDatabase = newItems;
+          artDatabase = mappedDbItems.concat(newItems);
           if (artDatabase.length > 0) saveRecentSearch(query, artDatabase[0].image);
         } else {
           artDatabase = artDatabase.concat(newItems);
         }
 
-        applyFrontendPriceFilter(); // Dibuja la cuadrícula respetando el slider
+        applyFrontendPriceFilter();
 
         loadMoreBtn.style.display = newItems.length > 0 ? 'block' : 'none';
         loadMoreBtn.textContent = "CARGAR MÁS MÓDULOS";
@@ -688,8 +722,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 05.4 Filtrado y Renderizado de Frontend ---
-
-    // Filtrado puramente en Frontend para el Slider de Precio
     function applyFrontendPriceFilter() {
       const maxPrice = parseInt(priceFilter.value);
       const filteredDb = artDatabase.filter(item => item.price <= maxPrice);
@@ -705,11 +737,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Detectar qué obras ya son favoritas al renderizar
       let currentFavs = JSON.parse(localStorage.getItem('vh_fav_items')) || [];
 
       archiveItems.forEach(product => {
+        // Renderizado visual de etiquetas (Amarillo para Nuevo, Rojo para PostgreSQL)
         const isNew = product.status === 'NUEVO' ? '<span style="color:var(--dark); font-family:var(--font-tech); font-weight:bold; font-size: 0.9rem; position:absolute; top:10px; left:10px; background:var(--primary); padding:5px 10px; z-index:20;">NUEVO</span>' : '';
+        const isNucleo = product.status === 'NÚCLEO' ? '<span style="color:#FFF; font-family:var(--font-tech); font-weight:bold; font-size: 0.9rem; position:absolute; top:10px; left:10px; background:#FF003C; padding:5px 10px; z-index:20; box-shadow: 0 0 10px #FF003C;">POSTGRESQL</span>' : '';
+        const badges = isNew + isNucleo;
+
         const isFav = currentFavs.some(f => f.id === product.id) ? 'is-fav' : '';
 
         catalogGrid.innerHTML += `
@@ -718,7 +753,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             <div class="product-image modal-trigger" data-id="${product.id}" data-target="true">
                 <img src="${product.image}" alt="${product.title}" class="real-art-img">
-                ${isNew}
+                ${badges}
                 <div class="scan-overlay"><div class="scan-text">INSPECCIONAR</div></div>
             </div>
 
