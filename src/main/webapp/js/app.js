@@ -1378,4 +1378,37 @@ document.addEventListener('DOMContentLoaded', () => {
           });
     });
   }
+
+  /* ==========================================================================
+     10. MOTOR SKETCHFAB Y ELEVADOR TÁCTICO (SOLO INDEX)
+     ========================================================================== */
+  const sketchfabContainer = document.getElementById('sketchfab-content');
+  if (sketchfabContainer) {
+    // Arrays de iframes puros optimizados para HUD oscuro
+    const modelos3D = [
+      `<iframe title="Cyberpunk Laptop" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" src="https://sketchfab.com/models/6be01e731cd245d6909cbab1af0ad274/embed?autostart=1&ui_theme=dark&ui_infos=0"></iframe>`,
+      `<iframe title="Cyberpunk Phone Booth" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" src="https://sketchfab.com/models/92f2bccf477c46bc88361aa37d218d95/embed?autostart=1&ui_theme=dark&ui_infos=0"></iframe>`,
+      `<iframe title="Cyberpunk Jeep" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" src="https://sketchfab.com/models/e4f1336dac6542f2b5abaa51b28c74bd/embed?autostart=1&ui_theme=dark&ui_infos=0"></iframe>`,
+      `<iframe title="Cyberpunk bike" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" src="https://sketchfab.com/models/efcf679a115c487face1adc2ce7e8b8c/embed?autostart=1&ui_theme=dark&ui_infos=0"></iframe>`,
+      `<iframe title="Cyberpunk Arcade Unit" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" src="https://sketchfab.com/models/2a0763de025f465187f1c985cdaf0b43/embed?autostart=1&ui_theme=dark&ui_infos=0"></iframe>`,
+      `<iframe title="(FREE) Cyberpunk Hovercar" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" src="https://sketchfab.com/models/3205b1075bb44ffc826bce0c2a04d74c/embed?autostart=1&ui_theme=dark&ui_infos=0"></iframe>`
+    ];
+
+    // Inyección de un modelo aleatorio al arrancar
+    sketchfabContainer.innerHTML = modelos3D[Math.floor(Math.random() * modelos3D.length)];
+
+    // Lógica del Elevador Táctico (Botones Subir/Catálogo/Bajar)
+    const navUp = document.getElementById('navUp');
+    const navCenter = document.getElementById('navCenter');
+    const navDown = document.getElementById('navDown');
+
+    if (typeof attachCursorHover === 'function') attachCursorHover([navUp, navCenter, navDown]);
+
+    if (navUp) navUp.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    if (navCenter) navCenter.addEventListener('click', () => {
+      const catalog = document.getElementById('catalog-section');
+      if (catalog) catalog.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    if (navDown) navDown.addEventListener('click', () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }));
+  }
 });

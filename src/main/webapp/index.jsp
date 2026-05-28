@@ -164,6 +164,16 @@
     </div>
 
   </section>
+  <aside id="sketchfab-widget" class="sketchfab-widget">
+    <div class="sketchfab-header"><span>// ENLACE 3D</span> <span style="color: var(--dark);">● REC</span></div>
+    <div id="sketchfab-content" class="sketchfab-content">
+    </div>
+    <div class="sketchfab-nav">
+      <button id="navUp" class="nav-btn" title="Subir a Inicio">▲</button>
+      <button id="navCenter" class="nav-btn" title="Ir al Catálogo">■</button>
+      <button id="navDown" class="nav-btn" title="Bajar al Final">▼</button>
+    </div>
+  </aside>
 </main>
 
 <!-- ================= MODAL DE DETALLE DE OBRA (DISEÑO VERTICAL EDITORIAL) ================= -->
